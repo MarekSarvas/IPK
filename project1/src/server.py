@@ -16,6 +16,7 @@ s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.bind((HOST, PORT))
 s.listen(0)
 
+
 msg = "here you go\r\n"
 while True:
     conn, addr = s.accept()
