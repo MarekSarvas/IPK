@@ -1,19 +1,22 @@
+##########################
+# Name: Marek Sarvas     #
+# Login: xsarva00        #
+# School: VUT FIT 2BIT   #
+# Subject: IPK           #
+##########################
 import sys
 import socket
 import re
 
-
 def handleGET(recv_list):
-  #  print("|"+recv_list[1].split("\r\n")[0]+"|")
     request_head = recv_list[1].split("\r\n")[0]
     if(re.fullmatch(r"\/resolve\?name=.*&type=(A|PTR) HTTP\/1\.1", request_head) != None):
+        #split the name(url or ip addr) from request
         name = request_head.split("name=")[1]
         name = name.split("&")[0]
-
+        #split the type(A or PTR) from request
         request_type = request_head.split("type=")[1]
         request_type = request_type.split(" ")[0]
-
-       # print("|"+name+request_type+"|")
 
         return resolveRequest(request_type, name)
     else:
@@ -27,8 +30,10 @@ def resolveRequest(req_type, req_name):
     if(req_type == "A"):
         try:
             ip = socket.gethostbyname(req_name)
+            #if ip address is in GET request and type is A response error
             if(ip == req_name):
                 return b"HTTP/1.1 400 Bad Request\r\n\r\n"
+            #otherwise
             response = "HTTP/1.1 200 Ok\r\n\r\n"+req_name+":"+req_type+"="+ip+"\r\n"
             return response.encode()
         except socket.gaierror:
@@ -37,8 +42,7 @@ def resolveRequest(req_type, req_name):
     elif(req_type == "PTR"):
         try:
             url = socket.gethostbyaddr(req_name)
-            print(url)
-            response = "HTTP/1.1 200 Ok\r\n\r\n"+req_name+":"+req_type+"="+url[0]+"\r\n"
+            response = "HTTP/1.1 200 Ok\r\n\r\n"+req_name+":"+req_type+"="+url[0]+"\r\n"#url si tuple and url address is on index 0
             return response.encode()
 
         except socket.gaierror:
@@ -46,6 +50,7 @@ def resolveRequest(req_type, req_name):
     else:
         return b"HTTP/1.1 400 Bad Request\r\n\r\n"
 
+#argument handling
 if(len(sys.argv) < 2):
     exit(1)
 
@@ -61,8 +66,6 @@ s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.bind((HOST, PORT))
 s.listen(0)
 
-
-msg = "here you go\r\n"
 while True:
     try:
         #accepts port
