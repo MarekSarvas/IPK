@@ -25,10 +25,24 @@ def handlePOST():
 
 def resolveRequest(req_type, req_name):
     if(req_type == "A"):
-        
-        return b"HTTP/1.1 200 Ok\r\n\r\n"
+        try:
+            ip = socket.gethostbyname(req_name)
+            if(ip == req_name):
+                return b"HTTP/1.1 400 Bad Request\r\n\r\n"
+            response = "HTTP/1.1 200 Ok\r\n\r\n"+req_name+":"+req_type+"="+ip+"\r\n"
+            return response.encode()
+        except socket.gaierror:
+            return b"HTTP/1.1 400 Bad Request\r\n\r\n"
+
     elif(req_type == "PTR"):
-        return b"HTTP/1.1 200 Ok\r\n\r\n"
+        try:
+            url = socket.gethostbyaddr(req_name)
+            print(url)
+            response = "HTTP/1.1 200 Ok\r\n\r\n"+req_name+":"+req_type+"="+url[0]+"\r\n"
+            return response.encode()
+
+        except socket.gaierror:
+            return b"HTTP/1.1 400 Bad Request\r\n\r\n"
     else:
         return b"HTTP/1.1 400 Bad Request\r\n\r\n"
 
