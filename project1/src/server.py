@@ -7,6 +7,7 @@
 import sys
 import socket
 import re
+import ipaddress
 
 def handleGET(recv_list):
     request_head = recv_list[1].split("\r\n")[0]
@@ -18,13 +19,39 @@ def handleGET(recv_list):
         request_type = request_head.split("type=")[1]
         request_type = request_type.split(" ")[0]
 
-        return resolveRequest(request_type, name)
-    else:
-        return b"HTTP/1.1 405 Method Not Allowed\r\n\r\n"
+        resolved = resolveRequest(request_type, name)
+        if resolved == False:
+            return b"HTTP/1.1 404 Not Found\n\n"
+        else:
+            return ("HTTP/1.1 200 Ok\n\n"+name+":"+request_type+"="+resolved+"\n").encode()
 
-def handlePOST():
-    print("POST")
-    return b"default post\r\n"
+    else:
+        return b"HTTP/1.1 404 Bad Request\n\n"
+
+def handlePOST(recv_list):
+    req_header = recv_list.split("\r\n")[0]
+    if re.fullmatch(r"\/dns-query HTTP\/1\.1",req_header) != None:
+        response_content = ""
+        content = recv_list.split("\r\n\r\n",1)[1] # get rid of header
+        content = content.split("\n")
+
+        #go through POST content
+        for req in content:
+            if re.fullmatch(r".*:(A|PTR)", req) != None:
+                resolved = resolveRequest(req.split(":")[1], req.split(":")[0])
+                if resolved == False:
+                    continue
+                else:
+                    response_content += req+"="+resolved+"\n"
+            else:
+                continue
+        #response
+        if response_content == "":
+            return b"HTTP/1.1 404 Not Found\n\n"
+        else:
+            return ("HTTP/1.1 200 Ok\n\n"+response_content).encode()
+    else:
+        return b"HTTP/1.1 400 Bad Request\n\n"
 
 def resolveRequest(req_type, req_name):
     if(req_type == "A"):
@@ -32,30 +59,33 @@ def resolveRequest(req_type, req_name):
             ip = socket.gethostbyname(req_name)
             #if ip address is in GET request and type is A response error
             if(ip == req_name):
-                return b"HTTP/1.1 400 Bad Request\r\n\r\n"
+                return False
             #otherwise
-            response = "HTTP/1.1 200 Ok\r\n\r\n"+req_name+":"+req_type+"="+ip+"\r\n"
-            return response.encode()
-        except socket.gaierror:
-            return b"HTTP/1.1 400 Bad Request\r\n\r\n"
+            #response = "HTTP/1.1 200 Ok\r\n\r\n"+req_name+":"+req_type+"="+ip+"\r\n"
+            return ip
+        except (socket.gaierror, socket.herror):
+            return False
 
     elif(req_type == "PTR"):
         try:
-            url = socket.gethostbyaddr(req_name)
-            response = "HTTP/1.1 200 Ok\r\n\r\n"+req_name+":"+req_type+"="+url[0]+"\r\n"#url si tuple and url address is on index 0
-            return response.encode()
+            #check if recieved name is valid ip address 
+            ipaddress.ip_address(req_name)
 
-        except socket.gaierror:
-            return b"HTTP/1.1 400 Bad Request\r\n\r\n"
+            url = socket.gethostbyaddr(req_name)
+            return url[0]
+        except (socket.gaierror, socket.herror, ValueError):
+            #return b"HTTP/1.1 400 Bad Request\r\n\r\n"
+            return False
     else:
-        return b"HTTP/1.1 400 Bad Request\r\n\r\n"
+        return False
 
 #argument handling
-if(len(sys.argv) < 2):
-    exit(1)
+if len(sys.argv) < 2 or len(sys.argv) > 2:
+    exit(70)
 
-if(int(sys.argv[1]) < 0 or int(sys.argv[1]) > 65535):
-    exit(1)
+#if(int(sys.argv[1]) < 0 or int(sys.argv[1]) > 65535):
+if not 0 <= int(sys.argv[1]) < 65536:
+    sys.exit(70)
 
 PORT = int(sys.argv[1]) 
 HOST = '127.0.0.1'
@@ -76,12 +106,11 @@ while True:
         list_data = data.decode().split(" ", 1)
         #handle method
         if(list_data[0] == "GET"):
-    
             send_msg = handleGET(list_data)
         elif(list_data[0] == "POST"):
-            send_msg = handlePOST()
+            send_msg = handlePOST(list_data[1])
         else:
-            if(client.sendall(b"HTTP/1.1 405 Method Not Allowed\r\n\r\n") == None):
+            if(client.sendall(b"HTTP/1.1 405 Method Not Allowed\n\n") == None):
                 client.close()
 
         #if not data:
