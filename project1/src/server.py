@@ -80,20 +80,23 @@ def resolveRequest(req_type, req_name):
         return False
 
 #argument handling
-if len(sys.argv) < 2 or len(sys.argv) > 2:
-    exit(70)
+if len(sys.argv) != 2:
+    sys.exit(77)
 
 #if(int(sys.argv[1]) < 0 or int(sys.argv[1]) > 65535):
 if not 0 <= int(sys.argv[1]) < 65536:
-    sys.exit(70)
+    sys.exit(77)
 
 PORT = int(sys.argv[1]) 
 HOST = '127.0.0.1'
-
+RECV_BYTES = 1024
 #create and bind the socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.bind((HOST, PORT))
+try:
+    s.bind((HOST, PORT))
+except PermissionError:
+    sys.exit(77)
 s.listen(0)
 
 while True:
@@ -101,15 +104,13 @@ while True:
         #accepts port
         client, addr = s.accept()
         #receives data
-        data = client.recv(1024)
-
+        data = client.recv(RECV_BYTES)        
         data_len = int(data.decode().split("Content-Length: ")[1].split("\n")[0])
-        print(data_len)
-        while data_len > 1024:
-            data +=client.recv(1024)
-            data_len -= 1024 
-        data +=client.recv(1024)
-    
+        while data_len > RECV_BYTES:
+            data +=client.recv(RECV_BYTES)
+            data_len -= RECV_BYTES 
+        data +=client.recv(RECV_BYTES)
+        
         #parse to get method
         list_data = data.decode().split(" ", 1)
         #handle method
@@ -119,14 +120,10 @@ while True:
             send_msg = handlePOST(list_data[1])
         else:
             if(client.sendall(b"HTTP/1.1 405 Method Not Allowed\n\n") == None):
-                client.close()
-
-        #if not data:
-        #   client.close()
-
+                client.close()      
         #send message
         if(client.sendall(send_msg) == None):
-            client.close()
+             client.close()
     except KeyboardInterrupt:
         s.close()
         sys.exit(0)
