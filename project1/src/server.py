@@ -101,7 +101,15 @@ while True:
         #accepts port
         client, addr = s.accept()
         #receives data
-        data = client.recv(4096)
+        data = client.recv(1024)
+
+        data_len = int(data.decode().split("Content-Length: ")[1].split("\n")[0])
+        print(data_len)
+        while data_len > 1024:
+            data +=client.recv(1024)
+            data_len -= 1024 
+        data +=client.recv(1024)
+    
         #parse to get method
         list_data = data.decode().split(" ", 1)
         #handle method
