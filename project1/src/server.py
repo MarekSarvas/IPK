@@ -122,12 +122,11 @@ while True:
         data = client.recv(RECV_BYTES)
 
         #checks for content length and receves data according to it   
-        if len(data.decode().split("content-Length: ")) > 1:
+        if len(data.decode().split("Content-Length: ")) > 1:
             data_len = int(data.decode().split("Content-Length: ")[1].split("\n")[0])
-            while data_len > RECV_BYTES:
+            while data_len > 0:
                 data +=client.recv(RECV_BYTES)
                 data_len -= RECV_BYTES 
-            data +=client.recv(RECV_BYTES)
         
         #parse to get method
         list_data = data.decode().split(" ", 1)
@@ -143,6 +142,6 @@ while True:
         if(client.sendall(send_msg) == None):
              client.close()
              client.close()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, BrokenPipeError):
         s.close()
         sys.exit(0)
