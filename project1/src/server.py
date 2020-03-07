@@ -141,7 +141,6 @@ while True:
         #send message
         if(client.sendall(send_msg) == None):
              client.close()
-             client.close()
     except (KeyboardInterrupt, BrokenPipeError):
         s.close()
         sys.exit(0)
