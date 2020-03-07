@@ -121,13 +121,14 @@ while True:
         #receives data
         data = client.recv(RECV_BYTES)
 
-        #checks for content length and receves data according to it   
+        #checks for content length and receves data according to it  
         if len(data.decode().split("Content-Length: ")) > 1:
             data_len = int(data.decode().split("Content-Length: ")[1].split("\n")[0])
-            while data_len > 0:
-                data +=client.recv(RECV_BYTES)
-                data_len -= RECV_BYTES 
-        
+            if data_len > RECV_BYTES :
+                while data_len > 0:
+                    data += client.recv(RECV_BYTES)
+                    data_len -= RECV_BYTES 
+          
         #parse to get method
         list_data = data.decode().split(" ", 1)
         #handle method
