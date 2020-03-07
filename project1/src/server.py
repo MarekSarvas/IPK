@@ -10,7 +10,7 @@ import re
 import ipaddress
 
 def handleGET(recv_list):
-    request_head = recv_list[1].split("\r\n")[0]
+    request_head = recv_list[1].replace("\r\n", "\n"). split("\n")[0]
     if(re.fullmatch(r"\/resolve\?name=.*&type=(A|PTR) HTTP\/1\.1", request_head) != None):
         #split the name(url or ip addr) from request
         name = request_head.split("name=")[1]
@@ -20,7 +20,9 @@ def handleGET(recv_list):
         request_type = request_type.split(" ")[0]
 
         resolved = resolveRequest(request_type, name)
-        if resolved == False:
+        if resolved == 400:
+            return b"HTTP/1.1 400 Bad Request\n\n"
+        elif resolved == 404:
             return b"HTTP/1.1 404 Not Found\n\n"
         else:
             return ("HTTP/1.1 200 Ok\n\n"+name+":"+request_type+"="+resolved+"\n").encode()
@@ -29,27 +31,41 @@ def handleGET(recv_list):
         return b"HTTP/1.1 404 Bad Request\n\n"
 
 def handlePOST(recv_list):
-    req_header = recv_list.split("\r\n")[0]
+    recv_list = recv_list.replace("\r\n", "\n")
+    req_header = recv_list.split("\n")[0]
+    
     if re.fullmatch(r"\/dns-query HTTP\/1\.1",req_header) != None:
+        response_err = b"HTTP/1.1 404 Not Found\n\n" # placeholder
         response_content = ""
-        content = recv_list.split("\r\n\r\n",1)[1] # get rid of header
+        
+        content = recv_list.split("\n\n",1)[1] # get rid of header
         content = content.split("\n")
+
+        #remove empty entries after spliting
+        content = list(filter(None, content))
+        #empty queries file
+        if len(content) == 0:
+            return b"HTTP/1.1 200 Ok\r\n\r\n"
 
         #go through POST content
         for req in content:
+            req = re.sub(r"\s+", '', req) # remove whitespaces
             if re.fullmatch(r".*:(A|PTR)", req) != None:
                 resolved = resolveRequest(req.split(":")[1], req.split(":")[0])
-                if resolved == False:
-                    continue
+                if resolved == 400:
+                    response_err = b"HTTP/1.1 400 Bad Request\n\n"
+                elif resolved == 404:
+                    pass
                 else:
                     response_content += req+"="+resolved+"\n"
             else:
-                continue
+                response_err = b"HTTP/1.1 400 Bad Request\n\n"
+        
         #response
         if response_content == "":
-            return b"HTTP/1.1 404 Not Found\n\n"
+            return response_err
         else:
-            return ("HTTP/1.1 200 Ok\n\n"+response_content).encode()
+            return ("HTTP/1.1 200 Ok\r\n\r\n"+response_content).encode()
     else:
         return b"HTTP/1.1 400 Bad Request\n\n"
 
@@ -59,12 +75,10 @@ def resolveRequest(req_type, req_name):
             ip = socket.gethostbyname(req_name)
             #if ip address is in GET request and type is A response error
             if(ip == req_name):
-                return False
-            #otherwise
-            #response = "HTTP/1.1 200 Ok\r\n\r\n"+req_name+":"+req_type+"="+ip+"\r\n"
+                return 400
             return ip
         except (socket.gaierror, socket.herror):
-            return False
+            return 404
 
     elif(req_type == "PTR"):
         try:
@@ -73,11 +87,12 @@ def resolveRequest(req_type, req_name):
 
             url = socket.gethostbyaddr(req_name)
             return url[0]
-        except (socket.gaierror, socket.herror, ValueError):
-            #return b"HTTP/1.1 400 Bad Request\r\n\r\n"
-            return False
+        except (socket.gaierror, socket.herror):
+            return 404
+        except ValueError:
+            return 400
     else:
-        return False
+        return 400
 
 #argument handling
 if len(sys.argv) != 2:
@@ -104,12 +119,15 @@ while True:
         #accepts port
         client, addr = s.accept()
         #receives data
-        data = client.recv(RECV_BYTES)        
-        data_len = int(data.decode().split("Content-Length: ")[1].split("\n")[0])
-        while data_len > RECV_BYTES:
+        data = client.recv(RECV_BYTES)
+
+        #checks for content length and receves data according to it   
+        if len(data.decode().split("content-Length: ")) > 1:
+            data_len = int(data.decode().split("Content-Length: ")[1].split("\n")[0])
+            while data_len > RECV_BYTES:
+                data +=client.recv(RECV_BYTES)
+                data_len -= RECV_BYTES 
             data +=client.recv(RECV_BYTES)
-            data_len -= RECV_BYTES 
-        data +=client.recv(RECV_BYTES)
         
         #parse to get method
         list_data = data.decode().split(" ", 1)
@@ -119,10 +137,11 @@ while True:
         elif(list_data[0] == "POST"):
             send_msg = handlePOST(list_data[1])
         else:
-            if(client.sendall(b"HTTP/1.1 405 Method Not Allowed\n\n") == None):
+            if(client.sendall(b"HTTP/1.1 405 Method Not Allowed\r\n\r\n") == None):
                 client.close()      
         #send message
         if(client.sendall(send_msg) == None):
+             client.close()
              client.close()
     except KeyboardInterrupt:
         s.close()
