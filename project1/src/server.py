@@ -41,13 +41,13 @@ def handlePOST(recv_list):
 
         # empty queries file
         if len(content) == 0:
-            return b"HTTP/1.1 200 Ok\r\n\r\n"
+            return b"HTTP/1.1 400 Bad Request\r\n\r\n"
 
-        # remove empty items from the end
-        if len(content) != 0:
-            i = -1
-            while content[i] == '':
-                content.pop(i)
+        # remove last empty line
+        if len(content) > 0 and content[-1] == '':
+            content.pop(-1)
+        if len(content) > 0 and content[-1] == '':
+            content.pop(-1)
             
         # go through POST content
         for req in content:
@@ -104,7 +104,10 @@ if len(sys.argv) != 2:
     sys.exit(77)
 
 # if(int(sys.argv[1]) < 0 or int(sys.argv[1]) > 65535):
-if not 0 <= int(sys.argv[1]) < 65536:
+try:
+    if not 0 <= int(sys.argv[1]) < 65536:
+        sys.exit(77)
+except ValueError:
     sys.exit(77)
 
 PORT = int(sys.argv[1]) 
