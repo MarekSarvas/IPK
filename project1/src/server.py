@@ -20,20 +20,20 @@ def handleGET(recv_list):
 
         resolved = resolveRequest(request_type, name)
         if resolved == 400:
-            return b"HTTP/1.1 400 Bad Request\n\n"
+            return b"HTTP/1.1 400 Bad Request\r\n\r\n"
         elif resolved == 404:
-            return b"HTTP/1.1 404 Not Found\n\n"
+            return b"HTTP/1.1 404 Not Found\r\n\r\n"
         else:
-            return ("HTTP/1.1 200 Ok\n\n"+name+":"+request_type+"="+resolved+"\n").encode()
+            return ("HTTP/1.1 200 Ok\r\n\r\n"+name+":"+request_type+"="+resolved+"\n").encode()
 
     else:
-        return b"HTTP/1.1 404 Bad Request\n\n"
+        return b"HTTP/1.1 404 Bad Request\r\n\r\n"
 
 def handlePOST(recv_list):
     req_header = recv_list.split("\r\n")[0]
     
     if re.fullmatch(r"\/dns-query HTTP\/1\.1",req_header) != None:
-        response_err = b"HTTP/1.1 404 Not Found\n\n" # placeholder
+        response_err = b"HTTP/1.1 404 Not Found\r\n\r\n" # placeholder
         response_content = ""
         
         content = recv_list.split("\r\n\r\n",1)[1] # get rid of header
@@ -55,13 +55,13 @@ def handlePOST(recv_list):
             if re.fullmatch(r".*:(A|PTR)", req) != None:
                 resolved = resolveRequest(req.split(":")[1], req.split(":")[0])
                 if resolved == 400:
-                    response_err = b"HTTP/1.1 400 Bad Request\n\n"
+                    response_err = b"HTTP/1.1 400 Bad Request\r\n\r\n"
                 elif resolved == 404:
                     pass
                 else:
                     response_content += req+"="+resolved+"\n"
             else:
-                response_err = b"HTTP/1.1 400 Bad Request\n\n"
+                response_err = b"HTTP/1.1 400 Bad Request\r\n\r\n"
         
         #response
         if response_content == "":
@@ -69,7 +69,7 @@ def handlePOST(recv_list):
         else:
             return ("HTTP/1.1 200 Ok\r\n\r\n"+response_content).encode()
     else:
-        return b"HTTP/1.1 400 Bad Request\n\n"
+        return b"HTTP/1.1 400 Bad Request\r\n\r\n"
 
 def resolveRequest(req_type, req_name):
     if(req_type == "A"):
