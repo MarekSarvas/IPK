@@ -63,6 +63,7 @@ where the example of a body is:
 `seznam.cz:A`
 ## Acknowledgments
 https://docs.python.org/3/library/socket.html
+
 https://realpython.com/python-sockets/
 
 ## Author
