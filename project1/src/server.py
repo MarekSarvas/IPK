@@ -152,8 +152,5 @@ while True:
             client.close()
     
     except (KeyboardInterrupt, BrokenPipeError):
-        if client.fileno() != -1:
-            if client.sendall(b"HTTP/1.1 500 Internal server error\r\n\r\n") == None:
-                client.close()
         s.close()
         sys.exit(0)
