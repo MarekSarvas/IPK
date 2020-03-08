@@ -7,10 +7,9 @@
 import sys
 import socket
 import re
-import ipaddress
 
 def handleGET(recv_list):
-    request_head = recv_list[1]. split("\r\n\r\n")[0]
+    request_head = recv_list[1]. split("\r\n")[0]
     if(re.fullmatch(r"\/resolve\?name=.*&type=(A|PTR) HTTP\/1\.1", request_head) != None):
         # split the name(url or ip addr) from request
         name = request_head.split("name=")[1]
@@ -75,24 +74,27 @@ def handlePOST(recv_list):
 def resolveRequest(req_type, req_name):
     if(req_type == "A"):
         try:
-            ip = socket.gethostbyname(req_name)
-            # if ip address is in GET request and type is A response error
-            if(ip == req_name):
+            try:
+                socket.inet_aton(req_name)
                 return 400
-            return ip
+            except OSError:
+                ip = socket.gethostbyname(req_name)
+                # if ip address is in GET request and type is A response error
+                if(ip == req_name):
+                    return 400
+                return ip
         except (socket.gaierror, socket.herror, UnicodeError):
             return 404
 
     elif(req_type == "PTR"):
         try:
             # check if recieved name is valid ip address 
-            ipaddress.ip_address(req_name)
-
+            socket.inet_aton(req_name)
             url = socket.gethostbyaddr(req_name)
             return url[0]
         except (socket.gaierror, socket.herror):
             return 404
-        except ValueError:
+        except OSError:
             return 400
     else:
         return 400
