@@ -27,7 +27,7 @@ def handleGET(recv_list):
             return ("HTTP/1.1 200 Ok\r\n\r\n"+name+":"+request_type+"="+resolved+"\n").encode()
 
     else:
-        return b"HTTP/1.1 404 Bad Request\r\n\r\n"
+        return b"HTTP/1.1 400 Bad Request\r\n\r\n"
 
 def handlePOST(recv_list):
     req_header = recv_list.split("\r\n")[0]
