@@ -2,15 +2,20 @@
 #include <pcap.h>
 #include <string>
 #include <getopt.h>
-#include<netinet/ip.h>
+#include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/if_ether.h>
-#include <netinet/ip6.h>
-#include <sys/socket.h>
 #include <net/ethernet.h>
 #include <iomanip>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sstream>
+
+#define SIZE_ETHERNET 14
+
 typedef struct ARGS{
 	std::string interf = ""; //name of interfacce
     std::string port = "";
@@ -19,14 +24,24 @@ typedef struct ARGS{
     int packet_num = 1;
 } Targs;
 
-
-
-
-
-
 bool check_args(int argc, char *argv[],Targs *args);
 std::string create_filter(const Targs*);
 void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* packet);
+
+std::string convert_time( long s, long us ) {
+
+    long hr = s / 3600 ; //3600 seconds is one hour
+    s = s - 3600 * hr; // subtract hours from all seconds
+
+    long min = s / 60; //60 seconds in minute
+    s = s - 60 * min; // subtract minutes from all seconds
+
+    std::stringstream ss;
+    //to get current hour % 24,
+    ss << std::setfill('0') << std::setw(2) << hr%24<<":"<< std::setfill('0') << std::setw(2) << min<<":"<< std::setfill('0') << std::setw(2) << s<<"."<<us;
+    return ss.str(); //return as string
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -59,7 +74,8 @@ int main(int argc, char *argv[])
     bpf_u_int32 net = 0;		/* The IP of our sniffing device */
 
 
-    pc_handle = pcap_open_live(args.interf.c_str(), BUFSIZ, 1, 1000, errbuf);
+    pc_handle = pcap_open_live(args.interf.c_str(), BUFSIZ, 0, 1000, errbuf);
+
     if (pc_handle == nullptr) {
         fprintf(stderr, "Couldn't open device %s: %s\n", "eth0", errbuf);
         return 2;
@@ -69,21 +85,25 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Couldn't parse filter %s: %s\n", filter.c_str(), pcap_geterr(pc_handle));
         return(2);
     }
-    std::cout << "NET:" << net << std::endl;
+
     if (pcap_setfilter(pc_handle, &fp) == -1) {
         fprintf(stderr, "Couldn't install filter %s: %s\n", filter.c_str(), pcap_geterr(pc_handle));
         return(2);
     }
-    std::cout << "DATA LINK:" << pcap_datalink(pc_handle) << std::endl;
 
+     pcap_loop(pc_handle, args.packet_num, callback_f, nullptr);
 
-
-
-    pcap_loop(pc_handle, args.packet_num, callback_f, reinterpret_cast<u_char *>(&args));
-
+    /*
+        int rc = pcap_dispatch(pc_handle, args.packet_num, callback_f, reinterpret_cast<u_char *>(&args));
+        struct pcap_pkthdr pkthdr{};
+        pcap_next(pc_handle, &pkthdr);
+        std::cout << rc << std::endl;
+        printf("Jacked a packet with length of [%d]\n", pkthdr.len);
+    */
 
     pcap_close(pc_handle);
     pcap_freecode(&fp);
+
     return(0);
 }
 
@@ -104,6 +124,7 @@ bool check_args(int argc, char *argv[], Targs* args){
 
     int curr_arg;
     int index;
+    long port;
     bool ret_code = true;
     char *endptr_tmp;  //tmp for correct number checking
 
@@ -127,14 +148,16 @@ bool check_args(int argc, char *argv[], Targs* args){
                 }
                 break;
             case 'p':
-                std::strtol(optarg, &endptr_tmp, 10);
+                port = std::strtol(optarg, &endptr_tmp, 10);
                 if(endptr_tmp == optarg || *endptr_tmp != '\0') { //if port is not a number or starts with number
+                    ret_code = false;
+                }
+                if(port < 0 || port > 65535){
                     ret_code = false;
                 }
                 args->port = optarg;
                 break;
             default:
-
                 return false;
         }
     }
@@ -157,59 +180,74 @@ std::string create_filter(const Targs * args){
 
     /*if port is set add it to the filter*/
     if(!args->port.empty()){
-        new_filter += " port "+args->port;
+        if(new_filter.empty()){
+            new_filter += "port "+args->port;
+        }
+        else{
+            new_filter += " port "+args->port;
+        }
     }
-    std::cout << "FILTER" << new_filter << std::endl;
+    if(!new_filter.empty()){
+        std::cout << "Filter set to: \"" << new_filter << "\"" << std::endl;
+    }
+
     return new_filter;
 }
-#define SIZE_ETHERNET 14
+
 void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* packet)
-
 {
-    //std::cout << pkthdr->len << ":" << std::hex  << std::setw(2) << packet[4] << std::endl;
+    /* convert to ip to get source and destination address*/
+    const struct ip *ip;
+    const struct iphdr * iphdr;
+    const struct tcphdr *tcp;
+    const struct udphdr *udp;
 
-    //printf("%d ",pkthdr->len);
+    ip = (struct ip *)(packet + SIZE_ETHERNET);//ip struct to get source and destination address
+    iphdr = (struct iphdr*)(packet+SIZE_ETHERNET); //iphdr to get protocol
 
-    for(int i =0; i< pkthdr->len; i++){
+    unsigned long protocol = (unsigned int) iphdr->protocol;
+    //TCP
+    if(protocol == 6){
+        tcp = (struct tcphdr*) (packet + sizeof(ether_header)+sizeof(struct iphdr));
+        std::cout << std::dec << convert_time(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec) << " " << inet_ntoa(ip->ip_src) << " : " <<  ntohs(tcp->source) << " > " << inet_ntoa(ip->ip_dst) << " : " <<  ntohs(tcp->dest) << std::endl;
+    }
+    //UDP protocol
+    else{
+        udp = (struct udphdr*) (packet + sizeof(ether_header)+sizeof(struct iphdr));
+        std::cout <<  std::dec << convert_time(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec) << " " << inet_ntoa(ip->ip_src) << " : " <<  ntohs(udp->source) << " > " << inet_ntoa(ip->ip_dst) << " : " <<  ntohs(udp->dest) << std::endl;
+    }
+
+    std::stringstream ss;
+    std::string ascii;
+    int i = 0;
+    for(; i< pkthdr->len; i++){
+        /*after 16 bytes print theirs ascii values and beginning of new row, reset string with ascii values */
         if(i%16 == 0){
+            std::cout << ascii;
             std::cout << std::endl << "0x" << std::hex << std::setfill('0') << std::setw(4) << std::right << i << " ";
+            ascii = "";
         }
-        printf("%02x ", packet[i]);
+        /* formatting */
+        if(i%16 == 8){
+            std::cout << " ";
+        }
+        /* print  hex number and save ascii value into string */
+        std::cout << std::hex << std::setfill('0') << std::setw(2) << (int16_t)packet[i] << " ";
+        /* if it can be printed */
+        if((int)packet[i] >= 32 && (int)packet[i] <= 127){
+            ascii += char((int)packet[i]);
+        }
+        /* if not store '.' */
+        else{
+            ascii +=".";
+        }
     }
+    /* if last row does not have 16 hexa numbers print spaces instead */
+    while(i%16 != 0){
+        std::cout<< "   ";
+        i++;
+    }
+    /* if last row does not have 16 hexa numbers print ascii values of remaining data */
+    std::cout << ascii;
     std::cout << std::endl << std::endl;
-    ip a{};
-    ethhdr b{};
-    tcphdr c{};
-    udphdr d{};
-
-    auto * new_args = (Targs *)(args);
-
-    const ethhdr *ethernet; /* The ethernet header */
-    const struct ip *ip; /* The IP header */
-    const struct sniff_tcp *tcp; /* The TCP header */
-    const char *payload; /* Packet payload */
-
-
-
-    /*
-    u_int size_ip;
-    u_int size_tcp;
-
-    ethernet = (ethhdr*)(packet);
-
-    ip = (iphdr *)(packet + SIZE_ETHERNET);
-    ip->
-    size_ip = IP_HL(ip)*4;
-    if (size_ip < 20) {
-        printf("   * Invalid IP header length: %u bytes\n", size_ip);
-        return;
-    }
-    tcp = (struct sniff_tcp*)(packet + SIZE_ETHERNET + size_ip);
-    size_tcp = TH_OFF(tcp)*4;
-    if (size_tcp < 20) {
-        printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
-        return;
-    }
-    payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
-    */
 }
