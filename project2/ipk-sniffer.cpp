@@ -5,8 +5,6 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
-#include <netinet/ip_icmp.h>
-#include <netinet/if_ether.h>
 #include <net/ethernet.h>
 #include <iomanip>
 #include <sys/types.h>
@@ -18,10 +16,10 @@
 
 typedef struct ARGS{
 	std::string interf = ""; //name of interfacce
-    std::string port = "";
-    bool is_tcp = false;
-    bool is_udp = false;
-    int packet_num = 1;
+    std::string port = "";  // port number as string
+    bool is_tcp = false;   //tcp filter flag
+    bool is_udp = false;  //udp filter flag
+    int packet_num = 1;  //number of packets to be sniffed
 } Targs;
 
 bool check_args(int argc, char *argv[],Targs *args);
@@ -31,8 +29,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
 std::string convert_time( long s, long us ) {
 
     long hr = s / 3600 ; //3600 seconds is one hour
-    s = s - 3600 * hr; // subtract hours from all seconds
-
+    s = s - 3600 * hr;  // subtract hours from all seconds
     long min = s / 60; //60 seconds in minute
     s = s - 60 * min; // subtract minutes from all seconds
 
@@ -46,32 +43,36 @@ std::string convert_time( long s, long us ) {
 int main(int argc, char *argv[])
 {
     Targs args;
+    //check program arguments
     bool args_rc = check_args(argc, argv, &args);
     if(!args_rc){
         return 1;
     }
 
-
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_if_t *alldevsp;
-
-    /* if interface is not given as program argument get all interfaces*/
+    pcap_if_t *to_free;
+    /* if interface is not given as program argument get all interfaces */
     if(args.interf.empty()){
         if(pcap_findalldevs(&alldevsp, errbuf) == PCAP_ERROR){
             std::cerr << "Error finding interfaces\n";
             return 1;
         }
+        to_free = alldevsp;
         while(alldevsp != nullptr){
             std::cout << alldevsp->name << std::endl;
+
             alldevsp = alldevsp->next;
+
         }
+        pcap_freealldevs(to_free);
         return 0;
     }
 
-    pcap_t *pc_handle; //packet capture handle
-    struct bpf_program fp{}; //compiled filter expresion
+    pcap_t *pc_handle;       //packet capture handle
+    struct bpf_program fp{};//compiled filter expresion
     std::string filter = create_filter(&args);
-    bpf_u_int32 net = 0;		/* The IP of our sniffing device */
+    bpf_u_int32 net = 0;
 
 
     pc_handle = pcap_open_live(args.interf.c_str(), BUFSIZ, 0, 1000, errbuf);
@@ -91,15 +92,7 @@ int main(int argc, char *argv[])
         return(2);
     }
 
-     pcap_loop(pc_handle, args.packet_num, callback_f, nullptr);
-
-    /*
-        int rc = pcap_dispatch(pc_handle, args.packet_num, callback_f, reinterpret_cast<u_char *>(&args));
-        struct pcap_pkthdr pkthdr{};
-        pcap_next(pc_handle, &pkthdr);
-        std::cout << rc << std::endl;
-        printf("Jacked a packet with length of [%d]\n", pkthdr.len);
-    */
+    pcap_loop(pc_handle, args.packet_num, callback_f, nullptr);
 
     pcap_close(pc_handle);
     pcap_freecode(&fp);
@@ -107,7 +100,8 @@ int main(int argc, char *argv[])
     return(0);
 }
 
-/* Function gets program number of arguments, program arguments and struct for storing them.
+/*
+ * Function gets program number of arguments, program arguments and struct for storing them.
  * Using getopt_long check correct argument in case of not supported arg return false and end program with
  * return code 1
  */
