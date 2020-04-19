@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+
 #define SIZE_ETHERNET 14
 
 typedef struct ARGS{
@@ -155,7 +156,11 @@ int check_args(int argc, char *argv[], Targs* args){
                 if(!help_flag){
                     return 1;
                 }
-                std::cout << "HELP\n";
+                std::cout << "Packet sniffer by Marek Sarvas\n"
+                             "--see readme.md for how to compile information\n--run program without arguments to see all available interfaces\n-i {interface} to select interface on which you want to sniff packets\n"
+                             "-n {number} to select how many packet will be sniffed\n-p {port number} to select on which port packets will be sniffed\n"
+                             "-t / --tcp to filter only tcp packets\n-u / --udp to filter only udp packets\n--if none of tcp or udp is selected packets sniffed will be either udp or tcp\n"
+                             "--if port is not selected packets will be sniffed on all ports\n--if -n is not selected only one packet will be sniffed\n";
                 return 2;
             default:
                 return 1;
