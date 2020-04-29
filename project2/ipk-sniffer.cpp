@@ -17,6 +17,7 @@
 
 #define SIZE_ETHERNET 14
 
+//struct for storing argument values
 typedef struct ARGS{
 	std::string interf = ""; //name of interfacce
     std::string port = "";  // port number as string
@@ -53,14 +54,14 @@ int main(int argc, char *argv[])
             std::cerr << "Error finding interfaces\n";
             return 1;
         }
-        to_free = alldevsp;
+        to_free = alldevsp;//save list of interfaces to free memory at the end
+        //print all interfaces
         while(alldevsp != nullptr){
             std::cout << alldevsp->name << std::endl;
-
             alldevsp = alldevsp->next;
 
         }
-        pcap_freealldevs(to_free);
+        pcap_freealldevs(to_free);//free memory allocated for interfaces
         return 0;
     }
 
@@ -73,22 +74,27 @@ int main(int argc, char *argv[])
     pc_handle = pcap_open_live(args.interf.c_str(), BUFSIZ, 0, 1000, errbuf);
 
     if (pc_handle == nullptr) {
-        fprintf(stderr, "Couldn't open device %s: %s\n", "eth0", errbuf);
-        return 2;
+        //fprintf(stderr, "Could not open interface %s: %s\n", args.interf.c_str(), errbuf);
+        std::cerr << "Could not open interface " <<  args.interf.c_str() << ": " << errbuf << std::endl;
+        return 1;
     }
     //std::cout << "Link layer header number: " << pcap_datalink(pc_handle) << std::endl;
     if (pcap_compile(pc_handle, &fp, filter.c_str(), 0, net) == -1) {
-        fprintf(stderr, "Couldn't parse filter %s: %s\n", filter.c_str(), pcap_geterr(pc_handle));
-        return(2);
+        //fprintf(stderr, "Couldn't parse filter %s: %s\n", filter.c_str(), pcap_geterr(pc_handle));
+        std::cerr << "Could not compile filter " <<  filter.c_str() << ": " << pcap_geterr(pc_handle) << std::endl;
+        return 1;
     }
 
     if (pcap_setfilter(pc_handle, &fp) == -1) {
-        fprintf(stderr, "Couldn't install filter %s: %s\n", filter.c_str(), pcap_geterr(pc_handle));
+        //fprintf(stderr, "Couldn't install filter %s: %s\n", filter.c_str(), pcap_geterr(pc_handle));
+        std::cerr << "Could not apply filter " <<  filter.c_str() << ": " << pcap_geterr(pc_handle) << std::endl;
         return(2);
     }
 
+    //sniff 'args.packet_num' packets
     pcap_loop(pc_handle, args.packet_num, callback_f, nullptr);
 
+    //correctly close interface
     pcap_close(pc_handle);
     pcap_freecode(&fp);
 
@@ -212,36 +218,67 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
 
     unsigned long protocol = (unsigned int) iphdr->protocol;
 
-    struct sockaddr_in socket_addr{};    /* socket address         */
-    socklen_t len;                      /* socket adress length   */
-    char get_name[NI_MAXHOST];         /* array for address name */
 
+
+    /* structures and variables for resolving packets source/destination ip addresses to name */
+    struct addrinfo *result = nullptr;
+    struct addrinfo hints{};
+
+    //set values for address used for getting address info
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    char get_name[NI_MAXHOST];         /* array for address name */
     std::string src_name;
     std::string dest_name;
 
-    /* IPv4 only */
-    socket_addr.sin_family = AF_INET;                                /* IP protocol family.  */
-    socket_addr.sin_addr.s_addr = inet_addr(inet_ntoa(ip->ip_src)); /* converted ip address into string then into number */
-    len = sizeof(struct sockaddr_in);                              /* get length of socket address */
 
+    //---------------------------------------------Source name----------------------------------------//
+    /* get addr structure into 'res' to get rid of ipv4 - ipv6 dependencies */
+    if (getaddrinfo(inet_ntoa(ip->ip_src), nullptr, &hints, &result) == 0){
+        std::cout << "A";
+        /*get info about address, resolved name is in get_name, if function does not return 0 ip address is stored as src address instead */
+        if (getnameinfo(result->ai_addr, result->ai_addrlen, get_name, sizeof(get_name), nullptr, 0, NI_NAMEREQD) == 0){
+                  src_name = get_name;
+        }
+        else{
+            src_name = inet_ntoa(ip->ip_src);
+        }
+        //free before next usage
+        freeaddrinfo(result);
+        result = nullptr;
+    }
+    /* if error during getaddrinfo occures ip address from packet is used instead of resolved name */
+    else{
+        src_name = inet_ntoa(ip->ip_src);
+        freeaddrinfo(result);
+        result = nullptr;
 
-    //--------------------------------------------source name-------------------------------------------------//
-    //socket address struct,    socket_addr len, host name, its length, service and length - does not need , flags - does not return numeric addresses - cannot convert IP and IP is used on stdout
-    int rc = getnameinfo((struct sockaddr *) &socket_addr, len, get_name, sizeof(get_name),nullptr, 0, NI_NAMEREQD);
-    if(rc){
-       src_name = inet_ntoa(ip->ip_src);
-    }else{
-        src_name = get_name;
     }
 
-    //---------------------------------------------destination name----------------------------------------//
-    socket_addr.sin_addr.s_addr = inet_addr(inet_ntoa(ip->ip_dst));
-    rc = getnameinfo((struct sockaddr *) &socket_addr, len, get_name, sizeof(get_name),nullptr, 0, NI_NAMEREQD);
-    if(rc){
+    //---------------------------------------------Destination name----------------------------------------//
+    /* get addr structure into 'res' to get rid of ipv4 - ipv6 dependencies */
+    if (getaddrinfo(inet_ntoa(ip->ip_dst), nullptr, &hints, &result) == 0){
+
+        /*get info about address, resolved name is in get_name, if function does not return 0 ip address is stored as src address instead */
+        if (getnameinfo(result->ai_addr, result->ai_addrlen, get_name, sizeof(get_name), nullptr, 0, NI_NAMEREQD) == 0){
+            dest_name = get_name;
+        }
+        else{
+            dest_name = inet_ntoa(ip->ip_dst);
+        }
+        freeaddrinfo(result);
+        result = nullptr;
+    }
+    /* if error during getaddrinfo occures ip address from packet is used instead of resolved name */
+    else{
         dest_name = inet_ntoa(ip->ip_dst);
-    }else{
-        dest_name = get_name;
+        freeaddrinfo(result);
+        result = nullptr;
     }
+
+
+
 
     //TCP
     if(protocol == 6){
