@@ -3,6 +3,7 @@
 #include <string>
 #include <getopt.h>
 #include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <net/ethernet.h>
@@ -30,7 +31,7 @@ int check_args(int argc, char *argv[],Targs *args);
 std::string create_filter(const Targs*);
 void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* packet);
 std::string convert_time( long s, long us );
-
+void resolve_ip();
 
 
 int main(int argc, char *argv[])
@@ -74,21 +75,18 @@ int main(int argc, char *argv[])
     pc_handle = pcap_open_live(args.interf.c_str(), BUFSIZ, 0, 1000, errbuf);
 
     if (pc_handle == nullptr) {
-        //fprintf(stderr, "Could not open interface %s: %s\n", args.interf.c_str(), errbuf);
         std::cerr << "Could not open interface " <<  args.interf.c_str() << ": " << errbuf << std::endl;
         return 1;
     }
-    //std::cout << "Link layer header number: " << pcap_datalink(pc_handle) << std::endl;
+
     if (pcap_compile(pc_handle, &fp, filter.c_str(), 0, net) == -1) {
-        //fprintf(stderr, "Couldn't parse filter %s: %s\n", filter.c_str(), pcap_geterr(pc_handle));
         std::cerr << "Could not compile filter " <<  filter.c_str() << ": " << pcap_geterr(pc_handle) << std::endl;
         return 1;
     }
 
     if (pcap_setfilter(pc_handle, &fp) == -1) {
-        //fprintf(stderr, "Couldn't install filter %s: %s\n", filter.c_str(), pcap_geterr(pc_handle));
         std::cerr << "Could not apply filter " <<  filter.c_str() << ": " << pcap_geterr(pc_handle) << std::endl;
-        return(2);
+        return 1;
     }
 
     //sniff 'args.packet_num' packets
@@ -212,15 +210,63 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     const struct iphdr * iphdr;
     const struct tcphdr *tcp;
     const struct udphdr *udp;
+    const struct ip6_hdr *ip6hdr;
+    const struct ether_header *ethhdr;
 
+    char ipv4_source[INET_ADDRSTRLEN];  //source address
+    char ipv4_dest[INET_ADDRSTRLEN];  //destination address
+
+    char ipv6_source[INET6_ADDRSTRLEN];  //source address
+    char ipv6_dest[INET6_ADDRSTRLEN];  //destination address
+
+    size_t ip_len;
+    unsigned int protocol = 0;
+
+    std::string src_name;
+    std::string dest_name;
+
+    ethhdr = (struct ether_header *)(packet);
+    //std::cout<< ntohs(ethhdr->ether_type) << ":"<<ETHERTYPE_IPV6<<std::endl;
+    if(ntohs(ethhdr->ether_type) == ETHERTYPE_IP){
+        iphdr = (struct iphdr*)(packet+SIZE_ETHERNET); //iphdr to get protocol
+        inet_ntop(AF_INET, &(iphdr->saddr), ipv4_source, INET_ADDRSTRLEN);
+        src_name = ipv4_source;
+        inet_ntop(AF_INET, &(iphdr->daddr), ipv4_dest, INET_ADDRSTRLEN);
+        dest_name = ipv4_dest;
+        ip_len = sizeof(struct iphdr);
+        protocol = (unsigned int) iphdr->protocol;
+    }
+    else if(ntohs(ethhdr->ether_type) == ETHERTYPE_IPV6){
+        ip6hdr = (struct ip6_hdr*)(packet + SIZE_ETHERNET);
+        inet_ntop(AF_INET6, &(ip6hdr->ip6_src), ipv6_source, INET6_ADDRSTRLEN);
+        src_name = ipv6_source;
+        inet_ntop(AF_INET6, &(ip6hdr->ip6_dst), ipv6_dest, INET6_ADDRSTRLEN);
+        dest_name = ipv6_dest;
+        ip_len = sizeof(struct ip6_hdr);
+        protocol = (unsigned int) ip6hdr->ip6_ctlun.ip6_un1.ip6_un1_nxt;
+    }
+
+/*
     ip = (struct ip *)(packet + SIZE_ETHERNET);//ip struct to get source and destination address
     iphdr = (struct iphdr*)(packet+SIZE_ETHERNET); //iphdr to get protocol
+    ip6hdr = (struct ip6_hdr*)(packet + SIZE_ETHERNET);
 
-    unsigned long protocol = (unsigned int) iphdr->protocol;
+    char serverIP[26];
+
+
+    std::cout << "Protocols: " << protocol << " : " << (unsigned int) ip6hdr->ip6_ctlun.ip6_un1.ip6_un1_nxt << std::endl;
+
+    inet_ntop(AF_INET6, &(ip6hdr->ip6_src), sourIP6, INET6_ADDRSTRLEN);
+    std::cout << ip->ip_v << std::endl;
+    std::cout << iphdr->version << std::endl;
+    std::cout << sourIP6  <<std::endl;
+    std::cout << "====================================================================\n";
+    std::cout << inet_ntoa(ip->ip_src) <<std::endl;
+    inet_ntop(AF_INET, &(iphdr->saddr), sourIP4, INET_ADDRSTRLEN);
+    std::cout << sourIP4 <<std::endl;
 
 
 
-    /* structures and variables for resolving packets source/destination ip addresses to name */
     struct addrinfo *result = nullptr;
     struct addrinfo hints{};
 
@@ -228,66 +274,24 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    char get_name[NI_MAXHOST];         /* array for address name */
-    std::string src_name;
-    std::string dest_name;
-
-
-    //---------------------------------------------Source name----------------------------------------//
-    /* get addr structure into 'res' to get rid of ipv4 - ipv6 dependencies */
-    if (getaddrinfo(inet_ntoa(ip->ip_src), nullptr, &hints, &result) == 0){
-        std::cout << "A";
-        /*get info about address, resolved name is in get_name, if function does not return 0 ip address is stored as src address instead */
-        if (getnameinfo(result->ai_addr, result->ai_addrlen, get_name, sizeof(get_name), nullptr, 0, NI_NAMEREQD) == 0){
-                  src_name = get_name;
-        }
-        else{
-            src_name = inet_ntoa(ip->ip_src);
-        }
-        //free before next usage
-        freeaddrinfo(result);
-        result = nullptr;
-    }
-    /* if error during getaddrinfo occures ip address from packet is used instead of resolved name */
-    else{
-        src_name = inet_ntoa(ip->ip_src);
-        freeaddrinfo(result);
-        result = nullptr;
-
-    }
-
-    //---------------------------------------------Destination name----------------------------------------//
-    /* get addr structure into 'res' to get rid of ipv4 - ipv6 dependencies */
-    if (getaddrinfo(inet_ntoa(ip->ip_dst), nullptr, &hints, &result) == 0){
-
-        /*get info about address, resolved name is in get_name, if function does not return 0 ip address is stored as src address instead */
-        if (getnameinfo(result->ai_addr, result->ai_addrlen, get_name, sizeof(get_name), nullptr, 0, NI_NAMEREQD) == 0){
-            dest_name = get_name;
-        }
-        else{
-            dest_name = inet_ntoa(ip->ip_dst);
-        }
-        freeaddrinfo(result);
-        result = nullptr;
-    }
-    /* if error during getaddrinfo occures ip address from packet is used instead of resolved name */
-    else{
-        dest_name = inet_ntoa(ip->ip_dst);
-        freeaddrinfo(result);
-        result = nullptr;
-    }
+    char get_name[NI_MAXHOST];
 
 
 
 
+
+    src_name = inet_ntoa(ip->ip_src);
+    dest_name = inet_ntoa(ip->ip_dst);
+    src_name = sourIP6;
+    */
     //TCP
     if(protocol == 6){
-        tcp = (struct tcphdr*) (packet + sizeof(ether_header)+sizeof(struct iphdr));
+        tcp = (struct tcphdr*) (packet + sizeof(ether_header)+ip_len);
         std::cout << std::dec << convert_time(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec) << " " << src_name << " : " <<  ntohs(tcp->source) << " > " << dest_name << " : " <<  ntohs(tcp->dest) << std::endl;
     }
     //UDP protocol
     else{
-        udp = (struct udphdr*) (packet + sizeof(ether_header)+sizeof(struct iphdr));
+        udp = (struct udphdr*) (packet + sizeof(ether_header)+ip_len);
         std::cout <<  std::dec << convert_time(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec) << " " << src_name << " : " <<  ntohs(udp->source) << " > " << dest_name << " : " <<  ntohs(udp->dest) << std::endl;
     }
 
@@ -325,6 +329,10 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     std::cout << ascii;
     std::cout << std::endl << std::endl;
 }
+
+
+
+
 
 std::string convert_time( long s, long us ) {
 
