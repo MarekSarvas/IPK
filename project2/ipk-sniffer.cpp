@@ -14,6 +14,7 @@
 #include <sstream>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <unordered_map>
 
 
 #define SIZE_ETHERNET 14
@@ -26,6 +27,8 @@ typedef struct ARGS{
     bool is_udp = false;  //udp filter flag
     int packet_num = 1;  //number of packets to be sniffed
 } Targs;
+
+std::unordered_map<std::string, std::string> ip_cache = {}; // unordered map to simulate cache for ip address resolving
 
 int check_args(int argc, char *argv[],Targs *args);
 std::string create_filter(const Targs*);
@@ -224,49 +227,42 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
 
     std::string src_name;
     std::string dest_name;
+    const char *src_to_resolve;
+    const char *dest_to_resolve;
+
 
     ethhdr = (struct ether_header *)(packet);
     //std::cout<< ntohs(ethhdr->ether_type) << ":"<<ETHERTYPE_IPV6<<std::endl;
     if(ntohs(ethhdr->ether_type) == ETHERTYPE_IP){
         iphdr = (struct iphdr*)(packet+SIZE_ETHERNET); //iphdr to get protocol
+
         inet_ntop(AF_INET, &(iphdr->saddr), ipv4_source, INET_ADDRSTRLEN);
-        src_name = ipv4_source;
+        src_to_resolve = ipv4_source;
+
         inet_ntop(AF_INET, &(iphdr->daddr), ipv4_dest, INET_ADDRSTRLEN);
-        dest_name = ipv4_dest;
+        dest_to_resolve = ipv4_dest;
+
         ip_len = sizeof(struct iphdr);
         protocol = (unsigned int) iphdr->protocol;
     }
     else if(ntohs(ethhdr->ether_type) == ETHERTYPE_IPV6){
         ip6hdr = (struct ip6_hdr*)(packet + SIZE_ETHERNET);
+
         inet_ntop(AF_INET6, &(ip6hdr->ip6_src), ipv6_source, INET6_ADDRSTRLEN);
-        src_name = ipv6_source;
+        src_to_resolve = ipv6_source;
+
         inet_ntop(AF_INET6, &(ip6hdr->ip6_dst), ipv6_dest, INET6_ADDRSTRLEN);
-        dest_name = ipv6_dest;
+        dest_to_resolve = ipv6_dest;
+
         ip_len = sizeof(struct ip6_hdr);
         protocol = (unsigned int) ip6hdr->ip6_ctlun.ip6_un1.ip6_un1_nxt;
     }
+    else{
+        std::cerr << "Ethernet type got from ethernet header of packet is not ETHERTYPE_IP nor ETHERTYPE_IPV6\n";
+        return;
+    }
 
-/*
-    ip = (struct ip *)(packet + SIZE_ETHERNET);//ip struct to get source and destination address
-    iphdr = (struct iphdr*)(packet+SIZE_ETHERNET); //iphdr to get protocol
-    ip6hdr = (struct ip6_hdr*)(packet + SIZE_ETHERNET);
-
-    char serverIP[26];
-
-
-    std::cout << "Protocols: " << protocol << " : " << (unsigned int) ip6hdr->ip6_ctlun.ip6_un1.ip6_un1_nxt << std::endl;
-
-    inet_ntop(AF_INET6, &(ip6hdr->ip6_src), sourIP6, INET6_ADDRSTRLEN);
-    std::cout << ip->ip_v << std::endl;
-    std::cout << iphdr->version << std::endl;
-    std::cout << sourIP6  <<std::endl;
-    std::cout << "====================================================================\n";
-    std::cout << inet_ntoa(ip->ip_src) <<std::endl;
-    inet_ntop(AF_INET, &(iphdr->saddr), sourIP4, INET_ADDRSTRLEN);
-    std::cout << sourIP4 <<std::endl;
-
-
-
+    /* structures and variables for resolving packets source/destination ip addresses to name */
     struct addrinfo *result = nullptr;
     struct addrinfo hints{};
 
@@ -274,64 +270,127 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    char get_name[NI_MAXHOST];
+    char get_name[NI_MAXHOST];         // array for address name
+    //---------------------------------------------Source name----------------------------------------//
+    // using unordered map as ip address cache, if source ip address count is 0, ip address is not in cache and resolving is performed, otherwise source name is loaded from "cache"
+    if(ip_cache.count(src_to_resolve) == 0){
+        // get addr structure into 'res' to get rid of ipv4 - ipv6 dependencies
+        if (getaddrinfo(src_to_resolve, nullptr, &hints, &result) == 0){
+            // get info about address, resolved name is in get_name, if function does not return 0 ip address is stored as src address instead
+            if (getnameinfo(result->ai_addr, result->ai_addrlen, get_name, sizeof(get_name), nullptr, 0, NI_NAMEREQD) == 0){
+                src_name = get_name;
+            }
+            else{
+                src_name = src_to_resolve;
+            }
+            //free before next usage
+            freeaddrinfo(result);
+            result = nullptr;
+        }
+        // if error during getaddrinfo occures ip address from packet is used instead of resolved name
+        else{
+            src_name = src_to_resolve;
+            freeaddrinfo(result);
+            result = nullptr;
+        }
+        ip_cache.insert({src_to_resolve, src_name});
+    }
+    // loading source name from cache
+    else{
+        src_name = ip_cache.find(src_to_resolve)->second;
+    }
+
+    //---------------------------------------------Destination name----------------------------------------//
+    // same usage as in source name, uses same cache
+    if(ip_cache.count(dest_to_resolve) == 0){
+        // get addr structure into 'res' to get rid of ipv4 - ipv6 dependencies
+        if (getaddrinfo(dest_to_resolve, nullptr, &hints, &result) == 0){
+
+            //get info about address, resolved name is in get_name, if function does not return 0 ip address is stored as src address instead
+            if (getnameinfo(result->ai_addr, result->ai_addrlen, get_name, sizeof(get_name), nullptr, 0, NI_NAMEREQD) == 0){
+                dest_name = get_name;
+            }else{
+                dest_name = dest_to_resolve;
+            }
+            freeaddrinfo(result);
+            result = nullptr;
+        }
+            // if error during getaddrinfo occures ip address from packet is used instead of resolved name
+        else{
+            dest_name = dest_to_resolve;
+            freeaddrinfo(result);
+            result = nullptr;
+        }
+        ip_cache.insert({dest_to_resolve, dest_name});
+    }
+    else{
+        dest_name = ip_cache.find(dest_to_resolve)->second;
+    }
 
 
-
-
-
-    src_name = inet_ntoa(ip->ip_src);
-    dest_name = inet_ntoa(ip->ip_dst);
-    src_name = sourIP6;
-    */
     //TCP
     if(protocol == 6){
         tcp = (struct tcphdr*) (packet + sizeof(ether_header)+ip_len);
         std::cout << std::dec << convert_time(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec) << " " << src_name << " : " <<  ntohs(tcp->source) << " > " << dest_name << " : " <<  ntohs(tcp->dest) << std::endl;
     }
     //UDP protocol
-    else{
+    else if (protocol == 17){
         udp = (struct udphdr*) (packet + sizeof(ether_header)+ip_len);
         std::cout <<  std::dec << convert_time(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec) << " " << src_name << " : " <<  ntohs(udp->source) << " > " << dest_name << " : " <<  ntohs(udp->dest) << std::endl;
     }
-
+    else{
+        std::cerr << "Protocol of the packet is not TCP nor UDP\n";
+        return;
+    }
     std::stringstream ss;
     std::string ascii;
     int i = 0;
+    bool half = false;
     for(; i< pkthdr->len; i++){
         /*after 16 bytes print theirs ascii values and beginning of new row, reset string with ascii values */
         if(i%16 == 0){
-            std::cout << ascii;
+            std::cout << " " << ascii;
             std::cout << std::endl << "0x" << std::hex << std::setfill('0') << std::setw(4) << std::right << i << " ";
             ascii = "";
+            half = false;
         }
         /* formatting */
         if(i%16 == 8){
             std::cout << " ";
+            half = true;
         }
         /* print  hex number and save ascii value into string */
         std::cout << std::hex << std::setfill('0') << std::setw(2) << (int16_t)packet[i] << " ";
         /* if it can be printed */
         if((int)packet[i] >= 32 && (int)packet[i] <= 127){
+            if(i%16 == 8){
+                ascii += " ";
+            }
             ascii += char((int)packet[i]);
         }
         /* if not store '.' */
         else{
+            if(i%16 == 8){
+                ascii += " ";
+            }
             ascii +=".";
         }
     }
     /* if last row does not have 16 hexa numbers print spaces instead */
     while(i%16 != 0){
-        std::cout<< "   ";
+        std::cout << "   ";
         i++;
     }
+    if(half){
+        std::cout << " ";
+    }else{
+        std::cout << "  ";
+    }
+
     /* if last row does not have 16 hexa numbers print ascii values of remaining data */
     std::cout << ascii;
-    std::cout << std::endl << std::endl;
+    std::cout << std::endl << std::endl << std::endl;
 }
-
-
-
 
 
 std::string convert_time( long s, long us ) {
