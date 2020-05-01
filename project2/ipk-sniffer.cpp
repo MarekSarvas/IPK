@@ -34,8 +34,6 @@ int check_args(int argc, char *argv[],Targs *args);
 std::string create_filter(const Targs*);
 void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* packet);
 std::string convert_time( long s, long us );
-void resolve_ip();
-
 
 int main(int argc, char *argv[])
 {
@@ -73,7 +71,6 @@ int main(int argc, char *argv[])
     struct bpf_program fp{};//compiled filter expresion
     std::string filter = create_filter(&args);
     bpf_u_int32 net = 0;
-
 
     pc_handle = pcap_open_live(args.interf.c_str(), BUFSIZ, 0, 1000, errbuf);
 
@@ -230,9 +227,8 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     const char *src_to_resolve;
     const char *dest_to_resolve;
 
+    ethhdr = (struct ether_header *)(packet); // make ethernet header to check for correct ethernet type( ipv4/ipv6)
 
-    ethhdr = (struct ether_header *)(packet);
-    //std::cout<< ntohs(ethhdr->ether_type) << ":"<<ETHERTYPE_IPV6<<std::endl;
     if(ntohs(ethhdr->ether_type) == ETHERTYPE_IP){
         iphdr = (struct iphdr*)(packet+SIZE_ETHERNET); //iphdr to get protocol
 
@@ -258,7 +254,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
         protocol = (unsigned int) ip6hdr->ip6_ctlun.ip6_un1.ip6_un1_nxt;
     }
     else{
-        std::cerr << "Ethernet type got from ethernet header of packet is not ETHERTYPE_IP nor ETHERTYPE_IPV6\n";
+        std::cerr << "Ethernet type got from ethernet header of packet is not ETHERTYPE_IP nor ETHERTYPE_IPV6\n\n\n";
         return;
     }
 
@@ -269,8 +265,8 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     //set values for address used for getting address info
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-
     char get_name[NI_MAXHOST];         // array for address name
+
     //---------------------------------------------Source name----------------------------------------//
     // using unordered map as ip address cache, if source ip address count is 0, ip address is not in cache and resolving is performed, otherwise source name is loaded from "cache"
     if(ip_cache.count(src_to_resolve) == 0){
@@ -333,7 +329,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
         tcp = (struct tcphdr*) (packet + sizeof(ether_header)+ip_len);
         std::cout << std::dec << convert_time(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec) << " " << src_name << " : " <<  ntohs(tcp->source) << " > " << dest_name << " : " <<  ntohs(tcp->dest) << std::endl;
     }
-    //UDP protocol
+    //UDP
     else if (protocol == 17){
         udp = (struct udphdr*) (packet + sizeof(ether_header)+ip_len);
         std::cout <<  std::dec << convert_time(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec) << " " << src_name << " : " <<  ntohs(udp->source) << " > " << dest_name << " : " <<  ntohs(udp->dest) << std::endl;
@@ -342,10 +338,13 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
         std::cerr << "Protocol of the packet is not TCP nor UDP\n";
         return;
     }
+    // variables for correct format of packet output
     std::stringstream ss;
     std::string ascii;
     int i = 0;
     bool half = false;
+
+    // print packet
     for(; i< pkthdr->len; i++){
         /*after 16 bytes print theirs ascii values and beginning of new row, reset string with ascii values */
         if(i%16 == 0){
@@ -394,7 +393,6 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
 
 
 std::string convert_time( long s, long us ) {
-
     long hr = s / 3600 ; //3600 seconds is one hour
     s = s - 3600 * hr;  // subtract hours from all seconds
     long min = s / 60; //60 seconds in minute
