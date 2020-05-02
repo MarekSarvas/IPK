@@ -6,6 +6,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[unicode]{hyperref}
 \usepackage{graphicx}
+\graphicspath{ {../test_img/} }
 \usepackage{textcomp}
 \usepackage[T1]{fontenc}
 \usepackage[left=2cm, text={17cm, 24cm}, top=2cm]{geometry}
@@ -19,10 +20,11 @@
     urlcolor=red, % color URLs in red
     linktoc=all % 'all' will create links for everything in the TOC
 }
+\usepackage[numbib]{tocbibind}
 
 \begin{document}
 
-%%%%%%%%%%%%%%%%%TITULKA%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%TITLE%%%%%%%%%%%%%%%%%%%%%%%% 
 
 	\begin{titlepage}
 		\begin{center}
@@ -44,47 +46,92 @@
 				
 				Marek Sarvaš\hspace{37px}(xsarva00)\hspace{19px} 
 			\hfill
-			Brno, 11.12.2019
+			Brno, 03.05.2020
 			\end{Large}
 		\end{flushleft}
 
 	\end{titlepage}
-%%%%%%%%%%%%%%%%%TITULKA%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%TITLE%%%%%%%%%%%%%%%%%%%%%%%% 
 
-%%%%%%%%%%%%%%%%%OBSAH%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%TABLE OF CONTENT%%%%%%%%%%%%%%%%%% 
 
 	\tableofcontents
 	\newpage
-%%%%%%%%%%%%%%%%%OBSAH%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%TABLE OF CONTENT%%%%%%%%%%%%%%%%%% 
+\section{Preface}
+Documentation for packet sniffer implemented in C++ language with libraries for manipulating with packets, for neccessary header structures such as ethernet header, ip header tcp header etc., namely \textbf{pcap.h, netinet/ip.h, netinet/ip6.h, netinet/tcp.h} etc.. Programme is sniffing packets using IPv4/IPv6 and UDP/TCP protocol on various ports.  
+\section{Theory}
+\subsection*{Transport layer}
+Is 4th layer which transports application-layer messages between application endpoints using TCP and UDP protocols( in the internet ). It breaks application messages into segments i.e. packets and sends them into internet layer where the recieving side reassembles them and passes to application layer.
+\subsection*{Packet}
+Packet is an unit that carries data over network, it represents the smallest amount of data that can be transferred over a network at once. It contains control information( source destination addresses, error detection and correction etc. ) and the data it is carrying. User data are encapsulated between header and trailer where control information are carried.
+\subsection*{TCP}
+It is connection-oriented protocol in which the connection between client and server is established before any data is sent. TCP uses three way handshake for better error detection and reliability but adds on latency. The minimum size of header is 20 bytes and maximum 60 bytes where main segments used in this project  where \textit{source port} and \textit{destination port}, each of them takes 16 bits.
+\subsection*{UDP}
+UDP is another transport layer protocol but is unreliable and connectionless unlike TCP. It does not use three way handshake because there is no need to establish connection before data transfer. Using UDP performance is heigher it does not check for errors, drops delayed packets and hase better latency than TCP. It is highly used in pc gaming or video communication. UDP header has fixed length to 8 bytes and contains neccessary information for this project such as \textit{source port} and \textit{destination port} with same 16 bits length as TCP.
+\newpage
+\section{Implementation}
+	Sniffer is implemented in one file ipk-sniffer, whole program is divided into few 				functions and main function. Compilation and how to run the sniffer is 
 
-
-	\section{About}
-	\large{ABOUT}
-	\newpage
-	\section{Implementation}
-
-Sniffer is implemented in one file ipk-sniffer, whole program is divided into few functions and main function. \newline
-MAIN
+\subsection{Main}
 First part of main function is for parsing given arguments using check\textunderscore args function.If interface was not given as argument all interfaces are printed in loop.
 	If program got interface ( or other optional arguments such as port, tcp, etc.) 
 	Firstly opens given interface for sniffing using pcap \textunderscore open \textunderscore live, on success compile given filter composed from given program arguments - tcp, udp, port. If compiled successfuly filter is applied on interface handler.
 	For actual sniffing pcap \textunderscore loop function is used with arguments interface handler, number of packets to be sniffed ( stored int argument structure), callback function ( documented below). There is no time limit in which packet has to be sniffed, because if user wants to sniffed eg. 2 packets program will run until 2 packets are sniffed.  After wanted number of packets is sniffed programme closes interface handler and frees allocated memory. Otherwise if interface where tcp/udp packets could be sniffed were given sniffer will run infinitely until interuption ( eg.: with CTRL+C ).\newline
-CHECK \textunderscore ARGS
+\subsection{CHECK \textunderscore ARGS}
 Verify arguments given to program using getopt, in case of -p ( port filter ) convert port number into integer and checks its correct value which has to be between 0 and 65535. \newline
 CREATE \textunderscore FILTER
 Creates a string filter using tcp, udp, port number from values given as programme arguments eg.: "port 80", "tcp", "udp port 5353" etc. Because programme is sniffing only tcp or udp packets filter "tcp udp" is same as none.\newline
 
-CALLBACK\newline
+\subsection{CALLBACK}
 Function passed into pcaploop called for every packet sniffed. Is responsible for parsing packet to get necessary information such as: time, protocol of packet, source and destination ports and ip addresses; resolving ip addresses into names and printing these information and whole packet on standard output.
 
 
 
-	\section{Testing}
-	testing
-	
+\section{Testing}
+For testing purpose \textbf{Wireshark} application was used. Sniffer was tested only manually, filters number of packets etc., no automated testing was involved, for different configuration. Output of implemented ipk-sniffer was compared with the same packet in Wireshark for same time, source and destination ports and addresses length and data of packet.
+\subsection{Basic filter testing}
+This involved testing differen configuration of filter i.e. combination of \textbf{tcp, udp} and \textbf{port number}. Also manually added in code filter for IPv6 but IPv6 address did not occure that often in ethernet traffic so that was a bit time consuming.\newline
+\includegraphics[scale=0.4]{basic_filter}
+\subsection{Name resolving with cache}
+When resolving FQDN from ip address using \textit{getaddrinfo()} and \textit{getnameinfo()} additional packets are sent. This fact with combination of more packet sniffing e.g.: argument -n 10 can result into repeatedly sniffing only these packet for name resolving.\newline
+Examples are run with \textit{\textbf{-n 20}} configuration
+\begin{itemize}
+  \item \textbf{without cache} \newline
+  \includegraphics[scale=0.4]{wireshark_nocache}
+ \item \textbf{using cache} \newline
+  \includegraphics[scale=0.4]{wireshark_cache}
+\end{itemize}
+\newpage
 
-	
-	
+\begin{thebibliography}{9}
+\bibitem{Computer Networking}
+James F. Kurose, Keith W. Ross. 
+\textit{Computer networking : a top-down approach}. 
+-6th edition
+
+\bibitem{Protocol Numbers} 
+Protocol Numbers,
+\\\texttt{https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml}
+
+\bibitem{Linux man} 
+Linux manual,
+\\\texttt{https://linux.die.net/man/}
+
+\bibitem{Linux man} 
+WinPcap Unix-compatible Functions,
+\\\texttt{https://www.winpcap.org/docs/docs\textunderscore 40\textunderscore 2/html/group\textunderscore \textunderscore wpcapfunc.html}
+
+\bibitem{Linux man} 
+LibPcap,
+\\\texttt{https://www.tcpdump.org/pcap.html}
+
+\bibitem{Linux man} 
+tcpdump pcap\textunderscore loop,
+\\\texttt{https://www.tcpdump.org/manpages/pcap\textunderscore loop.3pcap.html}
+
+
+\end{thebibliography}
 
 	
 \end{document}

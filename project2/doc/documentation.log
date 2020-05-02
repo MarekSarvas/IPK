@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.19)  30 APR 2020 00:51
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.19)  3 MAY 2020 00:58
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -734,35 +734,52 @@ Package caption3 Info: TeX engine: e-TeX on input line 67.
 \c@ContinuedFloat=\count103
 Package caption Info: hyperref package is loaded.
 )
-Package hyperref Info: Option `colorlinks' set `true' on input line 21.
+Package hyperref Info: Option `colorlinks' set `true' on input line 22.
 
-(./documentation.aux)
+(/usr/share/texlive/texmf-dist/tex/latex/tocbibind/tocbibind.sty
+Package: tocbibind 2010/10/13 v1.5k extra ToC listings
+Package tocbibind Info: The document has section divisions on input line 50.
+
+
+Package tocbibind Note: Using section or other style headings.
+
+) (./documentation.aux
+
+LaTeX Warning: Label `Linux man' multiply defined.
+
+
+LaTeX Warning: Label `Linux man' multiply defined.
+
+
+LaTeX Warning: Label `Linux man' multiply defined.
+
+)
 \openout1 = `documentation.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 23.
-LaTeX Font Info:    ... okay on input line 23.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 23.
-LaTeX Font Info:    ... okay on input line 23.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 23.
-LaTeX Font Info:    ... okay on input line 23.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 23.
-LaTeX Font Info:    ... okay on input line 23.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 23.
-LaTeX Font Info:    ... okay on input line 23.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 23.
-LaTeX Font Info:    ... okay on input line 23.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 23.
-LaTeX Font Info:    ... okay on input line 23.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 23.
-LaTeX Font Info:    ... okay on input line 23.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 23.
-LaTeX Font Info:    Try loading font information for TS1+cmr on input line 23.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 25.
+LaTeX Font Info:    ... okay on input line 25.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 25.
+LaTeX Font Info:    ... okay on input line 25.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 25.
+LaTeX Font Info:    ... okay on input line 25.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 25.
+LaTeX Font Info:    ... okay on input line 25.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 25.
+LaTeX Font Info:    ... okay on input line 25.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 25.
+LaTeX Font Info:    ... okay on input line 25.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 25.
+LaTeX Font Info:    ... okay on input line 25.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 25.
+LaTeX Font Info:    ... okay on input line 25.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 25.
+LaTeX Font Info:    Try loading font information for TS1+cmr on input line 25.
  (/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmr.fd
 File: ts1cmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
-LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    ... okay on input line 25.
 \AtBeginShipoutBox=\box26
-Package hyperref Info: Link coloring ON on input line 23.
+Package hyperref Info: Link coloring ON on input line 25.
 
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2016/05/21 v2.44 Cross-referencing by name of section
@@ -772,9 +789,9 @@ Package: gettitlestring 2016/05/16 v1.5 Cleanup title references (HO)
 )
 \c@section@level=\count104
 )
-LaTeX Info: Redefining \ref on input line 23.
-LaTeX Info: Redefining \pageref on input line 23.
-LaTeX Info: Redefining \nameref on input line 23.
+LaTeX Info: Redefining \ref on input line 25.
+LaTeX Info: Redefining \pageref on input line 25.
+LaTeX Info: Redefining \nameref on input line 25.
 
 (./documentation.out) (./documentation.out)
 \@outlinefile=\write3
@@ -847,15 +864,20 @@ e
 
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: End \AtBeginDocument code.
-<./logo.png, id=16, 401.5pt x 135.50626pt>
+<./logo.png, id=48, 401.5pt x 135.50626pt>
 File: ./logo.png Graphic file (type png)
 <use ./logo.png>
-Package pdftex.def Info: ./logo.png  used on input line 31.
+Package pdftex.def Info: ./logo.png  used on input line 33.
 (pdftex.def)             Requested size: 241.84842pt x 81.62485pt.
 [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map} <./logo.png>]
-(./documentation.toc)
+(./documentation.toc
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 6.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 6.
+)
 \tf@toc=\write4
 \openout4 = `documentation.toc'.
 
@@ -863,44 +885,105 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.57 	\newpage
+l.59 	\newpage
                [1] [2]
-Underfull \hbox (badness 10000) in paragraph at lines 66--76
+Underfull \hbox (badness 10000) in paragraph at lines 77--81
 
  []
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 90.
-[3]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 90.
+
+Underfull \hbox (badness 10000) in paragraph at lines 82--85
+
+ []
+
+<../test_img/basic_filter.png, id=99, 1232.605pt x 218.8175pt>
+File: ../test_img/basic_filter.png Graphic file (type png)
+<use ../test_img/basic_filter.png>
+Package pdftex.def Info: ../test_img/basic_filter.png  used on input line 95.
+(pdftex.def)             Requested size: 493.03326pt x 87.52544pt.
+
+Overfull \hbox (9.33643pt too wide) in paragraph at lines 94--96
+[] 
+ []
+
+[3 <../test_img/basic_filter.png>]
+<../test_img/wireshark_nocache.png, id=105, 941.5175pt x 824.07875pt>
+File: ../test_img/wireshark_nocache.png Graphic file (type png)
+<use ../test_img/wireshark_nocache.png>
+Package pdftex.def Info: ../test_img/wireshark_nocache.png  used on input line 
+101.
+(pdftex.def)             Requested size: 376.60033pt x 329.62566pt.
+<../test_img/wireshark_cache.png, id=106, 934.49126pt x 172.645pt>
+File: ../test_img/wireshark_cache.png Graphic file (type png)
+<use ../test_img/wireshark_cache.png>
+Package pdftex.def Info: ../test_img/wireshark_cache.png  used on input line 10
+3.
+(pdftex.def)             Requested size: 373.78989pt x 69.05676pt.
+ [4 <../test_img/wireshark_nocache.png> <../test_img/wireshark_cache.png>]
+LaTeX Font Info:    Try loading font information for T1+cmtt on input line 115.
+
+
+(/usr/share/texlive/texmf-dist/tex/latex/base/t1cmtt.fd
+File: t1cmtt.fd 2014/09/29 v2.5h Standard LaTeX font definitions
+)
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 137.
+ [5pdfTeX warning (ext4): destination with the same identifier (name{cite.Linux
+\040man}) has been already used, duplicate ignored
+
+\AtBegShi@Output ...ipout \box \AtBeginShipoutBox 
+                                                  \fi \fi 
+l.137 \end{document}
+                    pdfTeX warning (ext4): destination with the same identifier
+ (name{cite.Linux\040man}) has been already used, duplicate ignored
+
+\AtBegShi@Output ...ipout \box \AtBeginShipoutBox 
+                                                  \fi \fi 
+l.137 \end{document}
+                    pdfTeX warning (ext4): destination with the same identifier
+ (name{cite.Linux\040man}) has been already used, duplicate ignored
+
+\AtBegShi@Output ...ipout \box \AtBeginShipoutBox 
+                                                  \fi \fi 
+l.137 \end{document}
+                    ]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 137.
  (./documentation.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 90.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 90.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 137.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 137.
 Package rerunfilecheck Info: File `documentation.out' has not changed.
-(rerunfilecheck)             Checksum: E2F68D1E81B2466300F776881AF871B9;259.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 90.
+(rerunfilecheck)             Checksum: BB93CD57395967C46CC15F78C3A413F7;1167.
+
+
+LaTeX Warning: There were multiply-defined labels.
+
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 137.
  ) 
 Here is how much of TeX's memory you used:
- 11586 strings out of 494880
- 163717 string characters out of 6179601
- 240914 words of memory out of 5000000
- 14816 multiletter control sequences out of 15000+600000
- 11159 words of font info for 24 fonts, out of 8000000 for 9000
+ 11743 strings out of 494880
+ 166515 string characters out of 6179601
+ 243853 words of memory out of 5000000
+ 14941 multiletter control sequences out of 15000+600000
+ 13970 words of font info for 29 fonts, out of 8000000 for 9000
  36 hyphenation exceptions out of 8191
- 41i,5n,38p,628b,349s stack positions out of 5000i,500n,10000p,200000b,80000s
- </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1200.600
-pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1000.60
-0pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1000.6
-00pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1440.
-600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1440
-.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx172
-8.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx24
-88.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm2
-488.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/eccc
-2488.600pk>
-Output written on documentation.pdf (4 pages, 82848 bytes).
+ 41i,5n,38p,628b,358s stack positions out of 5000i,500n,10000p,200000b,80000s
+ </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600
+pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.60
+0pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbi1000.6
+00pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecti1000.
+600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1200
+.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm100
+0.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx10
+00.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1
+440.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm
+1440.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecb
+x1728.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ec
+bx2488.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/e
+crm2488.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/
+eccc2488.600pk>
+Output written on documentation.pdf (6 pages, 558491 bytes).
 PDF statistics:
- 279 PDF objects out of 1000 (max. 8388607)
- 76 compressed objects within 1 object stream
- 8 named destinations out of 1000 (max. 500000)
- 30 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 496 PDF objects out of 1000 (max. 8388607)
+ 154 compressed objects within 2 object streams
+ 24 named destinations out of 1000 (max. 500000)
+ 109 words of extra memory for PDF output out of 10000 (max. 10000000)
 

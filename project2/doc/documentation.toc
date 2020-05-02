@@ -1,4 +1,12 @@
 \babel@toc {english}{}
-\contentsline {section}{\numberline {1}About}{2}{section.1}
-\contentsline {section}{\numberline {2}Implementation}{3}{section.2}
-\contentsline {section}{\numberline {3}Testing}{3}{section.3}
+\contentsline {section}{Contents}{1}{section*.1}
+\contentsline {section}{\numberline {1}Preface}{2}{section.1}
+\contentsline {section}{\numberline {2}Theory}{2}{section.2}
+\contentsline {section}{\numberline {3}Implementation}{3}{section.3}
+\contentsline {subsection}{\numberline {3.1}Main}{3}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}CHECK \textunderscore ARGS}{3}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}CALLBACK}{3}{subsection.3.3}
+\contentsline {section}{\numberline {4}Testing}{3}{section.4}
+\contentsline {subsection}{\numberline {4.1}Basic filter testing}{3}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Name resolving with cache}{4}{subsection.4.2}
+\contentsline {section}{\numberline {5}References}{5}{section.5}
