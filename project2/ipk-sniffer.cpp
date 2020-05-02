@@ -17,8 +17,6 @@
 #include <unordered_map>
 
 
-#define SIZE_ETHERNET 14
-
 //struct for storing argument values
 typedef struct ARGS{
 	std::string interf = ""; //name of interfacce
@@ -29,6 +27,7 @@ typedef struct ARGS{
 } Targs;
 
 std::unordered_map<std::string, std::string> ip_cache = {}; // unordered map to simulate cache for ip address resolving
+int success_packets = 0;
 
 int check_args(int argc, char *argv[],Targs *args);
 std::string create_filter(const Targs*);
@@ -89,8 +88,12 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    success_packets = args.packet_num;
     //sniff 'args.packet_num' packets
-    pcap_loop(pc_handle, args.packet_num, callback_f, nullptr);
+    while(success_packets != 0){
+        pcap_loop(pc_handle, success_packets, callback_f, nullptr);
+    }
+
 
     //correctly close interface
     pcap_close(pc_handle);
@@ -228,9 +231,9 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     const char *dest_to_resolve;
 
     ethhdr = (struct ether_header *)(packet); // make ethernet header to check for correct ethernet type( ipv4/ipv6)
-
+    std::cout << "SIZE: " << (int)sizeof(struct ether_header) << std::endl;
     if(ntohs(ethhdr->ether_type) == ETHERTYPE_IP){
-        iphdr = (struct iphdr*)(packet+SIZE_ETHERNET); //iphdr to get protocol
+        iphdr = (struct iphdr*)(packet+sizeof(ether_header)); //iphdr to get protocol
 
         inet_ntop(AF_INET, &(iphdr->saddr), ipv4_source, INET_ADDRSTRLEN);
         src_to_resolve = ipv4_source;
@@ -242,7 +245,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
         protocol = (unsigned int) iphdr->protocol;
     }
     else if(ntohs(ethhdr->ether_type) == ETHERTYPE_IPV6){
-        ip6hdr = (struct ip6_hdr*)(packet + SIZE_ETHERNET);
+        ip6hdr = (struct ip6_hdr*)(packet + sizeof(ether_header));
 
         inet_ntop(AF_INET6, &(ip6hdr->ip6_src), ipv6_source, INET6_ADDRSTRLEN);
         src_to_resolve = ipv6_source;
@@ -266,12 +269,14 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     char get_name[NI_MAXHOST];         // array for address name
+    std::cout << src_to_resolve << " : " << dest_to_resolve << std::endl;
 
     //---------------------------------------------Source name----------------------------------------//
     // using unordered map as ip address cache, if source ip address count is 0, ip address is not in cache and resolving is performed, otherwise source name is loaded from "cache"
     if(ip_cache.count(src_to_resolve) == 0){
         // get addr structure into 'res' to get rid of ipv4 - ipv6 dependencies
         if (getaddrinfo(src_to_resolve, nullptr, &hints, &result) == 0){
+            std::cout << "Resolving src\n";
             // get info about address, resolved name is in get_name, if function does not return 0 ip address is stored as src address instead
             if (getnameinfo(result->ai_addr, result->ai_addrlen, get_name, sizeof(get_name), nullptr, 0, NI_NAMEREQD) == 0){
                 src_name = get_name;
@@ -293,15 +298,16 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     }
     // loading source name from cache
     else{
+        std::cout << "Cache src\n";
         src_name = ip_cache.find(src_to_resolve)->second;
     }
-
+    
     //---------------------------------------------Destination name----------------------------------------//
     // same usage as in source name, uses same cache
     if(ip_cache.count(dest_to_resolve) == 0){
         // get addr structure into 'res' to get rid of ipv4 - ipv6 dependencies
         if (getaddrinfo(dest_to_resolve, nullptr, &hints, &result) == 0){
-
+            std::cout << "Resolving desr\n";
             //get info about address, resolved name is in get_name, if function does not return 0 ip address is stored as src address instead
             if (getnameinfo(result->ai_addr, result->ai_addrlen, get_name, sizeof(get_name), nullptr, 0, NI_NAMEREQD) == 0){
                 dest_name = get_name;
@@ -320,6 +326,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
         ip_cache.insert({dest_to_resolve, dest_name});
     }
     else{
+        std::cout << "Cache dest\n";
         dest_name = ip_cache.find(dest_to_resolve)->second;
     }
 
@@ -338,6 +345,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
         std::cerr << "Protocol of the packet is not TCP nor UDP\n";
         return;
     }
+
     // variables for correct format of packet output
     std::stringstream ss;
     std::string ascii;
@@ -375,20 +383,27 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
             ascii +=".";
         }
     }
-    /* if last row does not have 16 hexa numbers print spaces instead */
-    while(i%16 != 0){
-        std::cout << "   ";
-        i++;
-    }
-    if(half){
-        std::cout << " ";
-    }else{
-        std::cout << "  ";
+
+    /* if last row does not have 16 hexa numbers print spaces instead so ascii characters are correctly formated*/
+    if(i%16 != 0){
+        while(i%16 != 0){
+            std::cout << "   ";
+            i++;
+        }
+        // if more than 8 bytes were print, print 1 space because of space in middle between 8th and 9th byte
+        if(half){
+            std::cout << " ";
+        }
+        // if less than 8 bytes were print, print 2 spaces
+        else{
+            std::cout << "  ";
+        }
     }
 
     /* if last row does not have 16 hexa numbers print ascii values of remaining data */
     std::cout << ascii;
     std::cout << std::endl << std::endl << std::endl;
+    success_packets--;
 }
 
 
