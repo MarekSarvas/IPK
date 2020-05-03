@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.19)  3 MAY 2020 16:06
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.19)  3 MAY 2020 20:41
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -964,11 +964,11 @@ Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 171.
 Here is how much of TeX's memory you used:
  11755 strings out of 494880
  166753 string characters out of 6179601
- 243946 words of memory out of 5000000
+ 244946 words of memory out of 5000000
  14948 multiletter control sequences out of 15000+600000
  13970 words of font info for 29 fonts, out of 8000000 for 9000
  36 hyphenation exceptions out of 8191
- 41i,5n,38p,810b,404s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,5n,38p,811b,404s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600
 pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbi1000.60
 0pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
@@ -983,9 +983,9 @@ x1728.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ec
 bx2488.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/e
 crm2488.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/
 eccc2488.600pk>
-Output written on documentation.pdf (7 pages, 731709 bytes).
+Output written on documentation.pdf (7 pages, 733414 bytes).
 PDF statistics:
- 520 PDF objects out of 1000 (max. 8388607)
+ 524 PDF objects out of 1000 (max. 8388607)
  163 compressed objects within 2 object streams
  28 named destinations out of 1000 (max. 500000)
  114 words of extra memory for PDF output out of 10000 (max. 10000000)

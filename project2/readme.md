@@ -40,3 +40,4 @@ all arguments possible are discribed in program help e.g.:
 * Programme is sniffing only tcp or udp packets, when no filter is given "TCP or UDP" is set by default, if user sets interface on which "TCP or UDP" filter is not applicable an error occures and programme ends. Or if interface does not have implemented link-layer type filtering programm ends with return code 1.
 * When -i(interface argument) is not used programme prints all devices found by *finalldevs()* function.
 * Information about every packet contain timestamp, source ip and port, destination ip and port. If IP can be resolved to FQDN, FQDN is printed instead. Sniffer supports only IPv4 and IPv6 IP to FQDN resolving using DNS cache. IP to FQDN resolving causes small memory leak according to valgrind.
+* Programme supports only link-layer types: LINKTYPE_ETHERNET(DLT_EN10MB) and LINKTYPE_LINUX_SLL(DLT_LINUX_SLL), it does not support loopback interfaces.

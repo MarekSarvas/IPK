@@ -76,7 +76,11 @@ int main(int argc, char *argv[])
         std::cerr << "Could not open interface " <<  args.interf.c_str() << ": " << errbuf << std::endl;
         return 1;
     }
-
+    int data_type = pcap_datalink(pc_handle);
+    if(data_type != DLT_LINUX_SLL && data_type != DLT_EN10MB){
+        std::cerr << "Invalid link-layer header type\n";
+        return 1;
+    }
     if (pcap_compile(pc_handle, &fp, filter.c_str(), 0, net) == -1) {
         std::cerr << "Could not compile filter " <<  filter.c_str() << ": " << pcap_geterr(pc_handle) << std::endl;
         return 1;
@@ -201,9 +205,7 @@ std::string create_filter(const Targs * args){
 
         }
     }
-    if(!new_filter.empty()){
-        std::cout << "Filter set to: \"" << new_filter << "\"" << std::endl;
-    }
+    std::cout << "Filter set to: \"" << new_filter << "\"" << std::endl;
 
     return new_filter;
 }
@@ -234,9 +236,9 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     const char *dest_to_resolve;
 
     ethhdr = (struct ether_header *)(packet); // make ethernet header to check for correct ethernet type( ipv4/ipv6)
-
+    u_short eth_type = ntohs(ethhdr->ether_type);
     // check ethernet type for IPv4 or IPv6 and get source/destiantion address length of header and protocol
-    if(ntohs(ethhdr->ether_type) == ETHERTYPE_IP){
+    if(eth_type == ETHERTYPE_IP){
         iphdr = (struct iphdr*)(packet+sizeof(ether_header)); //iphdr to get protocol
         // get ipv4 address from ipv4 header, address is stored into ipv4_source
         inet_ntop(AF_INET, &(iphdr->saddr), ipv4_source, INET_ADDRSTRLEN);
@@ -250,7 +252,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
         protocol = (unsigned int) iphdr->protocol;
     }
     // same as above but for IPv6
-    else if(ntohs(ethhdr->ether_type) == ETHERTYPE_IPV6){
+    else if(eth_type == ETHERTYPE_IPV6){
         ip6hdr = (struct ip6_hdr*)(packet + sizeof(ether_header));
 
         inet_ntop(AF_INET6, &(ip6hdr->ip6_src), ipv6_source, INET6_ADDRSTRLEN);
@@ -264,7 +266,11 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     }
     //should not happen
     else{
-        std::cerr << "Ethernet type got from ethernet header of packet is not ETHERTYPE_IP nor ETHERTYPE_IPV6\n\n\n";
+        if(eth_type == DLT_NULL){
+            std::cerr << "Ethernet type is loopback\n\n\n";
+        }else{
+            std::cerr << "Ethernet type got from ethernet header of packet is not ETHERTYPE_IP nor ETHERTYPE_IPV6\n\n\n";
+        }
         return;
     }
 
