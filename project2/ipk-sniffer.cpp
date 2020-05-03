@@ -27,7 +27,6 @@ typedef struct ARGS{
 } Targs;
 
 std::unordered_map<std::string, std::string> ip_cache = {}; // unordered map to simulate cache for ip address resolving
-int success_packets = 0;
 
 int check_args(int argc, char *argv[],Targs *args);
 std::string create_filter(const Targs*);
@@ -263,6 +262,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
         ip_len = sizeof(struct ip6_hdr);
         protocol = (unsigned int) ip6hdr->ip6_ctlun.ip6_un1.ip6_un1_nxt;
     }
+    //should not happen
     else{
         std::cerr << "Ethernet type got from ethernet header of packet is not ETHERTYPE_IP nor ETHERTYPE_IPV6\n\n\n";
         return;
@@ -315,7 +315,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     if(ip_cache.count(dest_to_resolve) == 0){
         // get addr structure into 'res' to get rid of ipv4 - ipv6 dependencies
         if (getaddrinfo(dest_to_resolve, nullptr, &hints, &result) == 0){
-            std::cerr << "Resolving destination address\n";
+            std::cerr << "Resolving destination address\n\n";
             //get info about address, resolved name is in get_name, if function does not return 0 ip address is stored as src address instead
             if (getnameinfo(result->ai_addr, result->ai_addrlen, get_name, sizeof(get_name), nullptr, 0, NI_NAMEREQD) == 0){
                 dest_name = get_name;
@@ -336,7 +336,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     }
     // loading destination name from cache
     else{
-        std::cerr << "Using cache for destination address\n";
+        std::cerr << "Using cache for destination address\n\n";
         dest_name = ip_cache.find(dest_to_resolve)->second;
     }
 
@@ -351,6 +351,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
         udp = (struct udphdr*) (packet + sizeof(ether_header)+ip_len);
         std::cout <<  std::dec << convert_time(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec) << " " << src_name << " : " <<  ntohs(udp->source) << " > " << dest_name << " : " <<  ntohs(udp->dest) << std::endl;
     }
+    //should not happen
     else{
         std::cerr << "Protocol of the packet is not TCP nor UDP\n";
         return;
@@ -413,7 +414,6 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     /* if last row does not have 16 hexa numbers print ascii values of remaining data */
     std::cout << ascii;
     std::cout << std::endl << std::endl << std::endl;
-    success_packets--;
 }
 
 

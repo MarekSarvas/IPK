@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.19)  3 MAY 2020 00:58
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.19)  3 MAY 2020 16:06
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -747,12 +747,6 @@ Package tocbibind Note: Using section or other style headings.
 
 LaTeX Warning: Label `Linux man' multiply defined.
 
-
-LaTeX Warning: Label `Linux man' multiply defined.
-
-
-LaTeX Warning: Label `Linux man' multiply defined.
-
 )
 \openout1 = `documentation.aux'.
 
@@ -887,88 +881,97 @@ been already used, duplicate ignored
                    \relax 
 l.59 	\newpage
                [1] [2]
-Underfull \hbox (badness 10000) in paragraph at lines 77--81
+Underfull \hbox (badness 10000) in paragraph at lines 79--84
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 82--85
+Underfull \hbox (badness 10000) in paragraph at lines 91--92
 
  []
 
-<../test_img/basic_filter.png, id=99, 1232.605pt x 218.8175pt>
+
+Underfull \hbox (badness 10000) in paragraph at lines 95--96
+
+ []
+
+[3]
+Underfull \hbox (badness 10000) in paragraph at lines 101--102
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 114--115
+
+ []
+
+<../test_img/basic_filter.png, id=104, 1538.74875pt x 270.00874pt>
 File: ../test_img/basic_filter.png Graphic file (type png)
 <use ../test_img/basic_filter.png>
-Package pdftex.def Info: ../test_img/basic_filter.png  used on input line 95.
-(pdftex.def)             Requested size: 493.03326pt x 87.52544pt.
+Package pdftex.def Info: ../test_img/basic_filter.png  used on input line 117.
+(pdftex.def)             Requested size: 461.62819pt x 81.00323pt.
 
-Overfull \hbox (9.33643pt too wide) in paragraph at lines 94--96
+Overfull \hbox (2.93138pt too wide) in paragraph at lines 116--118
 [] 
  []
 
-[3 <../test_img/basic_filter.png>]
-<../test_img/wireshark_nocache.png, id=105, 941.5175pt x 824.07875pt>
+<../test_img/default_filter.png, id=105, 1492.57625pt x 264.99pt>
+File: ../test_img/default_filter.png Graphic file (type png)
+<use ../test_img/default_filter.png>
+Package pdftex.def Info: ../test_img/default_filter.png  used on input line 119
+.
+(pdftex.def)             Requested size: 447.77634pt x 79.4976pt.
+[4 <../test_img/basic_filter.png> <../test_img/default_filter.png>]
+<../test_img/wireshark_nocache.png, id=112, 941.5175pt x 824.07875pt>
 File: ../test_img/wireshark_nocache.png Graphic file (type png)
 <use ../test_img/wireshark_nocache.png>
 Package pdftex.def Info: ../test_img/wireshark_nocache.png  used on input line 
-101.
+129.
 (pdftex.def)             Requested size: 376.60033pt x 329.62566pt.
-<../test_img/wireshark_cache.png, id=106, 934.49126pt x 172.645pt>
+<../test_img/wireshark_cache.png, id=113, 934.49126pt x 172.645pt>
 File: ../test_img/wireshark_cache.png Graphic file (type png)
 <use ../test_img/wireshark_cache.png>
-Package pdftex.def Info: ../test_img/wireshark_cache.png  used on input line 10
-3.
+Package pdftex.def Info: ../test_img/wireshark_cache.png  used on input line 13
+1.
 (pdftex.def)             Requested size: 373.78989pt x 69.05676pt.
- [4 <../test_img/wireshark_nocache.png> <../test_img/wireshark_cache.png>]
-LaTeX Font Info:    Try loading font information for T1+cmtt on input line 115.
+ [5 <../test_img/wireshark_nocache.png> <../test_img/wireshark_cache.png>]
+LaTeX Font Info:    Try loading font information for T1+cmtt on input line 145.
 
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/t1cmtt.fd
 File: t1cmtt.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 137.
- [5pdfTeX warning (ext4): destination with the same identifier (name{cite.Linux
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 171.
+ [6pdfTeX warning (ext4): destination with the same identifier (name{cite.Linux
 \040man}) has been already used, duplicate ignored
 
 \AtBegShi@Output ...ipout \box \AtBeginShipoutBox 
                                                   \fi \fi 
-l.137 \end{document}
-                    pdfTeX warning (ext4): destination with the same identifier
- (name{cite.Linux\040man}) has been already used, duplicate ignored
-
-\AtBegShi@Output ...ipout \box \AtBeginShipoutBox 
-                                                  \fi \fi 
-l.137 \end{document}
-                    pdfTeX warning (ext4): destination with the same identifier
- (name{cite.Linux\040man}) has been already used, duplicate ignored
-
-\AtBegShi@Output ...ipout \box \AtBeginShipoutBox 
-                                                  \fi \fi 
-l.137 \end{document}
+l.171 \end{document}
                     ]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 137.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 171.
  (./documentation.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 137.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 137.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 171.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 171.
 Package rerunfilecheck Info: File `documentation.out' has not changed.
-(rerunfilecheck)             Checksum: BB93CD57395967C46CC15F78C3A413F7;1167.
+(rerunfilecheck)             Checksum: D363FFC64723723F9C993A03709A8629;1238.
 
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 137.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 171.
  ) 
 Here is how much of TeX's memory you used:
- 11743 strings out of 494880
- 166515 string characters out of 6179601
- 243853 words of memory out of 5000000
- 14941 multiletter control sequences out of 15000+600000
+ 11755 strings out of 494880
+ 166753 string characters out of 6179601
+ 243946 words of memory out of 5000000
+ 14948 multiletter control sequences out of 15000+600000
  13970 words of font info for 29 fonts, out of 8000000 for 9000
  36 hyphenation exceptions out of 8191
- 41i,5n,38p,628b,358s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,5n,38p,810b,404s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600
-pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.60
-0pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbi1000.6
+pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbi1000.60
+0pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
 00pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecti1000.
 600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1200
 .600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm100
@@ -980,10 +983,10 @@ x1728.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/ec
 bx2488.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/e
 crm2488.600pk> </home/mar3k/.texlive2017/texmf-var/fonts/pk/ljfour/jknappen/ec/
 eccc2488.600pk>
-Output written on documentation.pdf (6 pages, 558491 bytes).
+Output written on documentation.pdf (7 pages, 731709 bytes).
 PDF statistics:
- 496 PDF objects out of 1000 (max. 8388607)
- 154 compressed objects within 2 object streams
- 24 named destinations out of 1000 (max. 500000)
- 109 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 520 PDF objects out of 1000 (max. 8388607)
+ 163 compressed objects within 2 object streams
+ 28 named destinations out of 1000 (max. 500000)
+ 114 words of extra memory for PDF output out of 10000 (max. 10000000)
 

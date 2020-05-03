@@ -70,41 +70,71 @@ It is connection-oriented protocol in which the connection between client and se
 \subsection*{UDP}
 UDP is another transport layer protocol but is unreliable and connectionless unlike TCP. It does not use three way handshake because there is no need to establish connection before data transfer. Using UDP performance is heigher it does not check for errors, drops delayed packets and hase better latency than TCP. It is highly used in pc gaming or video communication. UDP header has fixed length to 8 bytes and contains neccessary information for this project such as \textit{source port} and \textit{destination port} with same 16 bits length as TCP.
 \newpage
+
+
 \section{Implementation}
 	Sniffer is implemented in one file ipk-sniffer, whole program is divided into few 				functions and main function. Compilation and how to run the sniffer is 
 
-\subsection{Main}
-First part of main function is for parsing given arguments using check\textunderscore args function.If interface was not given as argument all interfaces are printed in loop.
-	If program got interface ( or other optional arguments such as port, tcp, etc.) 
-	Firstly opens given interface for sniffing using pcap \textunderscore open \textunderscore live, on success compile given filter composed from given program arguments - tcp, udp, port. If compiled successfuly filter is applied on interface handler.
-	For actual sniffing pcap \textunderscore loop function is used with arguments interface handler, number of packets to be sniffed ( stored int argument structure), callback function ( documented below). There is no time limit in which packet has to be sniffed, because if user wants to sniffed eg. 2 packets program will run until 2 packets are sniffed.  After wanted number of packets is sniffed programme closes interface handler and frees allocated memory. Otherwise if interface where tcp/udp packets could be sniffed were given sniffer will run infinitely until interuption ( eg.: with CTRL+C ).\newline
-\subsection{CHECK \textunderscore ARGS}
-Verify arguments given to program using getopt, in case of -p ( port filter ) convert port number into integer and checks its correct value which has to be between 0 and 65535. \newline
-CREATE \textunderscore FILTER
-Creates a string filter using tcp, udp, port number from values given as programme arguments eg.: "port 80", "tcp", "udp port 5353" etc. Because programme is sniffing only tcp or udp packets filter "tcp udp" is same as none.\newline
+\subsection{Main()}
+First part of main function is for parsing given arguments using check\textunderscore args function.If interface was not given as argument all interfaces are printed in loop.\newline
+	If program got interface ( or other optional arguments such as port, tcp, etc.), 
+	opens given interface for sniffing using pcap\textunderscore open\textunderscore live, on success compile given filter composed from given program arguments - tcp, udp, port. If compiled successfuly filter is applied on interface handler.\newline
+	For actual sniffing pcap \textunderscore loop function is used with arguments interface handler, number of packets to be sniffed ( stored int argument structure), callback function ( documented below). There is no time limit in which packet has to be sniffed, because if user wants to sniffed eg. 2 packets program will run until 2 packets are sniffed.  After wanted number of packets is sniffed programme closes interface handler and frees allocated memory.\newline
+	 Otherwise if interface, where tcp/udp packets could not be sniffed was given, sniffer will run infinitely until interuption ( eg.: with CTRL+C ).\newline
+	
+\subsection{Create\textunderscore filter}
+Creates a string filter using tcp, udp, port number from values given as programme arguments. Because programme is sniffing only tcp or udp packets default filter will be set to \textbf{"(proto tcp) or (proto udp)"}, this filter is set either if program is run with "--tcp" and "--udp" arguments or without them. "Proto" in filter means that only IPv4 and IPv6 packets will be sniffed and default tcp/udp filter means only tcp and udp packets will be sniffed. Port number is added into filter with \textbf{"and"} e.g.: \textbf{"(proto tcp) and (port 443)"}.
 
-\subsection{CALLBACK}
-Function passed into pcaploop called for every packet sniffed. Is responsible for parsing packet to get necessary information such as: time, protocol of packet, source and destination ports and ip addresses; resolving ip addresses into names and printing these information and whole packet on standard output.
+\subsection{Callback fucntion}
+Function passed into pcap\textunderscore loop and is called for every packet sniffed. Is responsible for parsing packet to get necessary information such as: time, protocol of packet, source and destination ports and ip addresses, resolving ip addresses into names and printing these information and whole packet on standard output.
+\begin{itemize}
+ 	\item \textbf{Ethernet type} \newline
+ 	
+ 	Firstly gets ethernet header from packet data and chooses if sniffed packet uses IPv4 or IPv6. According to IP gets IPv4/IPv6 header in which are neccessary information for future use such as IP source address and IP destination address, protocol( TCP/UDP) and length of IP header. For IP addresses \textbf{inet\textunderscore ntop} function is used with \textbf{AF\textunderscore INET} argument for IPv4 and \textbf{AF\textunderscore INET6} for IPv6.
+ 	
+	\item \textbf{Source and destination names using cache} \newline
+	
+	If the IP address is not in DNS cache, it is resolved to FQDN using \textbf{getaddrinfo} function to get rid of IPv4-IPv6 dependencies. Needed information are stored in \textbf{addrinfo} structure. This structure is next used in \textbf{getnameinfo} function to get FQDN from \textbf{ai\textunderscore addr} variable. \textbf{Getnameinfo} function is used with textbf{NI\textunderscore NAMEREQD} flags which returns error if IP address cannot be resolved, this is causing small memory leak according to \textit{valgrind} even though everything is freed same as when IP address is resolved into FQDN. In both cases(IP address can or cannot be resolved) IP address is stored in DNS cache. If IP is already in cache none of above functions is called and FQDN is got from there.
+	DNS cache is implemented as unordered map whre \textit{key} is IP address and \textit{value} is either resolved FQDN or same IP address. Cache is implemented because \textbf{getaddrinfo} and \textbf{getnameinfo} are producing another packets when called, then sniffer catches these new generated packets this can cause loops and influence output. 
+	\newpage
+	
+	\item \textbf{Print packet} \newline
+	
+	Firstly is printed time when packet was sniffed which is got from packet header and computed to hh:mm:ss.ffff format using \textbf{convert\textunderscore time} function. Then IPv4/IPv6 source/destination IP addresses with corresponding ports. For port numbers \textbf{ntohs} function is used. Next is printed whole packet in bytes in hexadecimal and ascii format, 16  bytes per row, every row starting with hexadecimal number which represents how many bytes were printed before current row. Format of packet ouput is same as packet representation in \textbf{Wireshark}.
+
+\end{itemize}
+
 
 
 
 \section{Testing}
 For testing purpose \textbf{Wireshark} application was used. Sniffer was tested only manually, filters number of packets etc., no automated testing was involved, for different configuration. Output of implemented ipk-sniffer was compared with the same packet in Wireshark for same time, source and destination ports and addresses length and data of packet.
+
 \subsection{Basic filter testing}
 This involved testing differen configuration of filter i.e. combination of \textbf{tcp, udp} and \textbf{port number}. Also manually added in code filter for IPv6 but IPv6 address did not occure that often in ethernet traffic so that was a bit time consuming.\newline
-\includegraphics[scale=0.4]{basic_filter}
+\begin{itemize}
+  \item \textbf{TCP protocol and port 443 filter}\newline
+  \includegraphics[scale=0.3]{basic_filter}
+ \item \textbf{Without filter arguments} - TCP and UDP are default\newline
+  \includegraphics[scale=0.3]{default_filter}
+\end{itemize}
+
+\newpage
 \subsection{Name resolving with cache}
 When resolving FQDN from ip address using \textit{getaddrinfo()} and \textit{getnameinfo()} additional packets are sent. This fact with combination of more packet sniffing e.g.: argument -n 10 can result into repeatedly sniffing only these packet for name resolving.\newline
-Examples are run with \textit{\textbf{-n 20}} configuration
+Examples are run with \textit{\textbf{-n 20}} configuration and tested in \textbf{Wireshark} application.
+
 \begin{itemize}
-  \item \textbf{without cache} \newline
+  \item \textbf{without cache} excessive packets are sent\newline
   \includegraphics[scale=0.4]{wireshark_nocache}
- \item \textbf{using cache} \newline
+ \item \textbf{using cache} number of these packets is reduced to minimum\newline
   \includegraphics[scale=0.4]{wireshark_cache}
 \end{itemize}
 \newpage
 
+
 \begin{thebibliography}{9}
+
 \bibitem{Computer Networking}
 James F. Kurose, Keith W. Ross. 
 \textit{Computer networking : a top-down approach}. 
@@ -118,7 +148,7 @@ Protocol Numbers,
 Linux manual,
 \\\texttt{https://linux.die.net/man/}
 
-\bibitem{Linux man} 
+\bibitem{Pcapfunctions} 
 WinPcap Unix-compatible Functions,
 \\\texttt{https://www.winpcap.org/docs/docs\textunderscore 40\textunderscore 2/html/group\textunderscore \textunderscore wpcapfunc.html}
 
@@ -126,12 +156,16 @@ WinPcap Unix-compatible Functions,
 LibPcap,
 \\\texttt{https://www.tcpdump.org/pcap.html}
 
-\bibitem{Linux man} 
+\bibitem{Pcaploop} 
 tcpdump pcap\textunderscore loop,
 \\\texttt{https://www.tcpdump.org/manpages/pcap\textunderscore loop.3pcap.html}
 
+\bibitem{Filter} 
+Packet filter,
+\\\texttt{https://www.tcpdump.org/manpages/pcap-filter.7.html}
 
 \end{thebibliography}
 
+	
 	
 \end{document}
