@@ -88,12 +88,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    success_packets = args.packet_num;
-    //sniff 'args.packet_num' packets
-    while(success_packets != 0){
-        pcap_loop(pc_handle, success_packets, callback_f, nullptr);
-    }
-
+    pcap_loop(pc_handle, args.packet_num, callback_f, nullptr);
 
     //correctly close interface
     pcap_close(pc_handle);
@@ -179,24 +174,32 @@ int check_args(int argc, char *argv[], Targs* args){
 /* creates new filter based on program arguments*/
 std::string create_filter(const Targs * args){
     std::string new_filter;
-
+    bool both = false;
     /*if tcp is set and udp dont filter tcp*/
     if(args->is_tcp && !args->is_udp) {
-        new_filter += "tcp";
+        new_filter = "(proto \\tcp)";
     }
     /*if udp is set and tcp dont filter udp*/
     else if(!args->is_tcp && args->is_udp){
-        new_filter = "udp";
+        new_filter = "(proto \\udp)";
     }
-    /*if both tcp and udp is set or both are unset dont filter*/
-
+    /*if both tcp and udp is set or both are unset*/
+    else{
+        new_filter = "(proto \\tcp) or (proto \\udp)";
+        both = true;
+    }
     /*if port is set add it to the filter*/
     if(!args->port.empty()){
         if(new_filter.empty()){
             new_filter += "port "+args->port;
         }
         else{
-            new_filter += " port "+args->port;
+            if(both){
+                new_filter = "(proto \\tcp) and (port "+args->port+") or (proto \\udp) and (port "+args->port+")";
+            }else{
+                new_filter += " and (port "+args->port+")";
+            }
+
         }
     }
     if(!new_filter.empty()){
@@ -208,14 +211,14 @@ std::string create_filter(const Targs * args){
 
 void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* packet)
 {
-    /* convert to ip to get source and destination address*/
-    const struct ip *ip;
+    //declaration of neccessary headers
     const struct iphdr * iphdr;
     const struct tcphdr *tcp;
     const struct udphdr *udp;
     const struct ip6_hdr *ip6hdr;
     const struct ether_header *ethhdr;
     const struct icmp_header *ih;
+    // strings for ip addresses
     char ipv4_source[INET_ADDRSTRLEN];  //source address
     char ipv4_dest[INET_ADDRSTRLEN];  //destination address
 
@@ -225,6 +228,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
     size_t ip_len;
     unsigned int protocol = 0;
 
+    //strings for final resolved addresses
     std::string src_name;
     std::string dest_name;
     const char *src_to_resolve;
@@ -232,18 +236,21 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
 
     ethhdr = (struct ether_header *)(packet); // make ethernet header to check for correct ethernet type( ipv4/ipv6)
 
+    // check ethernet type for IPv4 or IPv6 and get source/destiantion address length of header and protocol
     if(ntohs(ethhdr->ether_type) == ETHERTYPE_IP){
         iphdr = (struct iphdr*)(packet+sizeof(ether_header)); //iphdr to get protocol
-
+        // get ipv4 address from ipv4 header, address is stored into ipv4_source
         inet_ntop(AF_INET, &(iphdr->saddr), ipv4_source, INET_ADDRSTRLEN);
         src_to_resolve = ipv4_source;
-
+        // same as source but for destination
         inet_ntop(AF_INET, &(iphdr->daddr), ipv4_dest, INET_ADDRSTRLEN);
         dest_to_resolve = ipv4_dest;
-
+        // get length of ipv4 header
         ip_len = sizeof(struct iphdr);
+        // UDP or TCP protocol
         protocol = (unsigned int) iphdr->protocol;
     }
+    // same as above but for IPv6
     else if(ntohs(ethhdr->ether_type) == ETHERTYPE_IPV6){
         ip6hdr = (struct ip6_hdr*)(packet + sizeof(ether_header));
 
@@ -294,6 +301,7 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
             freeaddrinfo(result);
             result = nullptr;
         }
+        // added ip address into cache
         ip_cache.insert({src_to_resolve, src_name});
     }
     // loading source name from cache
@@ -317,14 +325,16 @@ void callback_f(u_char *args,const struct pcap_pkthdr* pkthdr, const u_char* pac
             freeaddrinfo(result);
             result = nullptr;
         }
-            // if error during getaddrinfo occures ip address from packet is used instead of resolved name
+        // if error during getaddrinfo occures ip address from packet is used instead of resolved name
         else{
             dest_name = dest_to_resolve;
             freeaddrinfo(result);
             result = nullptr;
         }
+        // added ip address into cache
         ip_cache.insert({dest_to_resolve, dest_name});
     }
+    // loading destination name from cache
     else{
         std::cerr << "Using cache for destination address\n";
         dest_name = ip_cache.find(dest_to_resolve)->second;
